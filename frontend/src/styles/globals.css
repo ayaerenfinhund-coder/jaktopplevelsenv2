@@ -8,6 +8,18 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    color-scheme: dark;
+  }
+
+  /* Dark mode date picker icons */
+  ::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.6;
+    cursor: pointer;
+  }
+
+  ::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
   }
 
   body {

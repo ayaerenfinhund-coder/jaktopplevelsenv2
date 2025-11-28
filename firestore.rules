@@ -1,29 +1,61 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Brukere
+    // Only allow authenticated users with specific emails
+    function isAllowedUser() {
+      return request.auth != null &&
+             (request.auth.token.email == 'sandbergsimen90@gmail.com' ||
+              request.auth.token.email == 'w.geicke@gmail.com');
+    }
+
+    // Hunts collection
+    match /hunts/{huntId} {
+      // Allow create if user is allowed
+      allow create: if isAllowedUser() && 
+                      request.resource.data.userId == request.auth.uid;
+      
+      // Allow read/update/delete if user owns the hunt
+      allow read, update, delete: if isAllowedUser() &&
+                                     resource.data.userId == request.auth.uid;
+    }
+
+    // Dogs collection
+    match /dogs/{dogId} {
+      // Allow create if user is allowed
+      allow create: if isAllowedUser() && 
+                      request.resource.data.userId == request.auth.uid;
+      
+      // Allow read/update if user owns the dog
+      allow read, update: if isAllowedUser() &&
+                             resource.data.userId == request.auth.uid;
+      
+      // Allow delete if user owns the dog (simplified check)
+      // Allow delete if user owns the dog
+      allow delete: if resource.data.userId == request.auth.uid;
+    }
+
+    // Tracks collection (for GPX data)
+    match /tracks/{trackId} {
+      allow create: if isAllowedUser() && 
+                      request.resource.data.userId == request.auth.uid;
+      
+      allow read, update, delete: if isAllowedUser() &&
+                                     resource.data.userId == request.auth.uid;
+    }
+
+    // Photos collection (if you store photo metadata)
+    match /photos/{photoId} {
+      allow create: if isAllowedUser() && 
+                      request.resource.data.userId == request.auth.uid;
+      
+      allow read, update, delete: if isAllowedUser() &&
+                                     resource.data.userId == request.auth.uid;
+    }
+
+    // Users collection
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Hunder
-    match /users/{userId}/dogs/{dogId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Jaktturer
-    match /users/{userId}/hunts/{huntId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Spor
-    match /users/{userId}/hunts/{huntId}/tracks/{trackId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Bilder (metadata)
-    match /users/{userId}/hunts/{huntId}/photos/{photoId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isAllowedUser() &&
+                           request.auth.uid == userId;
     }
   }
 }

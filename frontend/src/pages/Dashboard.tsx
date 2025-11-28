@@ -20,9 +20,13 @@ import {
   Calendar,
   Image,
   Trash2,
+  Zap,
+  Cloud,
+  Trophy,
+  Activity
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { nb } from 'date-fns/locale';
+import { DatePicker, TimePicker } from '../components/common/CustomPickers';
 import Modal from '../components/common/Modal';
 import { HuntCardSkeleton } from '../components/common/Skeleton';
 import GarminLoginModal from '../components/common/GarminLoginModal';
@@ -72,8 +76,6 @@ function getHuntingSeason(date: string): string {
   }
   return `${year}/${year + 1}`;
 }
-
-
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -169,10 +171,7 @@ export default function Dashboard() {
       console.error("Dashboard fetch error:", error);
       toast.error(`Kunne ikke laste turer: ${(error as any).message}`);
     }
-    if (hunts.length > 0) {
-      console.log("Loaded hunts:", hunts);
-    }
-  }, [hunts, error]);
+  }, [error]);
 
   // REAL DATA: Create hunt mutation
   const createHuntMutation = useMutation({
@@ -285,7 +284,6 @@ export default function Dashboard() {
         return;
       }
 
-      // Try to geocode location name to coordinates
       setIsLoadingWeather(true);
       try {
         const searchUrl = `https://ws.geonorge.no/stedsnavn/v1/navn?sok=${encodeURIComponent(loc)}&maxAnt=1&filtrer=navn`;
@@ -300,17 +298,14 @@ export default function Dashboard() {
                 place.representasjonspunkt.øst
               ];
 
-              // Kombiner jaktdato med starttid for å få riktig tidspunkt
               const huntDateTime = new Date(huntDate);
               if (matchedTrack?.start_time) {
                 const [hours, minutes] = matchedTrack.start_time.split(':');
                 huntDateTime.setHours(parseInt(hours), parseInt(minutes));
               } else {
-                // Default til 06:00 hvis ingen starttid
                 huntDateTime.setHours(6, 0);
               }
 
-              // Hent værdata for det faktiske jakttidspunktet
               const { fetchWeatherForTime } = await import('../services/weatherService');
               const weatherData = await fetchWeatherForTime(coords[0], coords[1], huntDateTime);
               if (weatherData) {
@@ -349,7 +344,6 @@ export default function Dashboard() {
   }, [selectedLocation, setLastSelectedLocation]);
 
   const currentDogName = activeDogs.find((d) => d.id === selectedDog)?.name || 'Velg hund';
-  const todayDate = new Date().toISOString().split('T')[0];
 
   // REAL: Sync with Garmin
   const handleGarminSync = async (silent = false) => {
@@ -390,10 +384,8 @@ export default function Dashboard() {
         setMatchedTrack(trackData);
         setShowTrackConfirm(true);
 
-        // Set start time from track if available
         if (trackData.start_time) {
           setStartTime(format(new Date(trackData.start_time), 'HH:mm'));
-          // Estimate end time based on duration (if available) or add 2 hours
           const start = new Date(trackData.start_time);
           const end = new Date(start.getTime() + (trackData.statistics?.duration_minutes || 120) * 60000);
           setEndTime(format(end, 'HH:mm'));
@@ -404,7 +396,6 @@ export default function Dashboard() {
         console.error('GPX upload error:', error);
         toast.error(error.message || 'Kunne ikke lese GPX-fil', { id: toastId });
       } finally {
-        // Reset input
         if (gpxInputRef.current) gpxInputRef.current.value = '';
       }
     }
@@ -415,7 +406,6 @@ export default function Dashboard() {
     const now = Date.now();
     const timeSinceLastSync = now - lastAutoSyncTime;
 
-    // Only auto-sync if we have a selected dog and enough time has passed
     if (selectedDog && timeSinceLastSync > MIN_SYNC_INTERVAL && !hasInitialSynced.current) {
       hasInitialSynced.current = true;
       handleGarminSync(true);
@@ -445,7 +435,6 @@ export default function Dashboard() {
       setLastSelectedLocation(customLocation);
     }
 
-    // Build hunt data
     const huntData: any = {
       title: quickNote || `Jakttur ${format(huntDate, 'dd.MM.yyyy')}`,
       date: format(huntDate, 'yyyy-MM-dd'),
@@ -470,13 +459,12 @@ export default function Dashboard() {
       })),
       dogs: [selectedDog],
       tracks: matchedTrack ? [matchedTrack.id] : [],
-      photos: [], // Photos handled separately
+      photos: [],
       notes: quickNote || '',
       tags: [],
       is_favorite: false,
     };
 
-    // Only add weather if it exists (Firestore doesn't allow undefined)
     if (weather) {
       huntData.weather = weather;
     }
@@ -535,9 +523,6 @@ export default function Dashboard() {
     return matchesSearch && matchesQuickFilter && matchesSeason && matchesGame && matchesLocation && matchesDog;
   });
 
-  const totalSeen = Object.values(gameSeen).reduce((a, b) => a + b, 0);
-  const totalHarvested = Object.values(gameHarvested).reduce((a, b) => a + b, 0);
-
   // Get available seasons
   const availableSeasons = Array.from(
     new Set(hunts.map((h: Hunt) => getHuntingSeason(h.date)))
@@ -566,18 +551,30 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Oversikt</h1>
+          <p className="text-zinc-400 mt-1">Loggfør dine jaktopplevelser</p>
+        </div>
+
+      </div>
+
       {/* Draft recovery banner */}
       {showDraftBanner && (
-        <div className="bg-primary-700/20 border border-primary-700/40 rounded-lg p-3 flex items-center justify-between">
-          <div className="text-sm text-text-primary">
-            <span className="font-medium">Ulagret kladd funnet</span>
-            <span className="text-text-muted ml-2">Vil du gjenopprette?</span>
+        <div className="bg-primary-900/20 border border-primary-500/30 rounded-lg p-4 flex items-center justify-between backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
+            <div className="text-sm text-zinc-200">
+              <span className="font-medium">Ulagret kladd funnet.</span>
+              <span className="text-zinc-400 ml-2">Vil du fortsette der du slapp?</span>
+            </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button
               onClick={restoreDraft}
-              className="text-xs bg-primary-700 text-white px-3 py-1 rounded hover:bg-primary-600 transition-colors"
+              className="text-xs bg-primary-600 hover:bg-primary-500 text-white px-3 py-1.5 rounded transition-colors"
             >
               Gjenopprett
             </button>
@@ -586,7 +583,7 @@ export default function Dashboard() {
                 clearDraft();
                 setShowDraftBanner(false);
               }}
-              className="text-xs text-text-muted hover:text-error transition-colors"
+              className="text-xs text-zinc-400 hover:text-white transition-colors"
             >
               Forkast
             </button>
@@ -594,506 +591,370 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Quick registration form - CONTINUES IN NEXT MESSAGE DUE TO LENGTH */}
-      <div className="p-5 bg-background-light rounded-xl">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-text-primary">Hurtigregistrering</h2>
-            {showDraftBanner && (
-              <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full font-medium animate-pulse">
-                Kladd lagret
-              </span>
-            )}
-          </div>
-          {showDraftBanner && (
-            <button
-              onClick={restoreDraft}
-              className="text-xs text-primary-600 hover:text-primary-700 font-medium underline"
-            >
-              Fortsett
-            </button>
-          )}
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column: Quick Log & Recent Hunts */}
+        <div className="lg:col-span-2 space-y-8">
 
-        {/* Date and Time selectors */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-          <div>
-            <label className="text-xs text-text-muted mb-1 block">Dato</label>
-            <input
-              type="date"
-              value={huntDate.toISOString().split('T')[0]}
-              max={new Date().toISOString().split('T')[0]}
-              onChange={(e) => setHuntDate(new Date(e.target.value))}
-              className="input text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-text-muted mb-1 block">Starttid</label>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="input text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-text-muted mb-1 block">Sluttid</label>
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="input text-sm"
-            />
-          </div>
-        </div>
+          {/* Quick Log Card */}
+          <div className="card overflow-hidden border-zinc-800/60">
+            <div className="card-header bg-zinc-900/50 flex justify-between items-center py-3">
+              <h2 className="font-semibold text-zinc-100 flex items-center gap-2 text-sm uppercase tracking-wider">
+                <Zap className="w-4 h-4 text-primary-500" /> Hurtigregistrering
+              </h2>
+              {showDraftBanner && (
+                <span className="text-[10px] bg-primary-500/10 text-primary-400 px-2 py-0.5 rounded-full font-medium border border-primary-500/20">
+                  Kladd lagret
+                </span>
+              )}
+            </div>
 
-        {/* Dog and Location selectors */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div>
-            <label className="text-xs text-text-muted mb-1 block">
-              Hund {!selectedDog && <span className="text-error">*</span>}
-            </label>
-            <select
-              value={selectedDog}
-              onChange={(e) => {
-                setSelectedDog(e.target.value);
-                if (validationErrors.dog) {
-                  setValidationErrors((prev) => {
-                    const { dog, ...rest } = prev;
-                    return rest;
-                  });
-                }
-              }}
-              className={`select text-sm ${validationErrors.dog ? 'border-error ring-1 ring-error' : ''}`}
-            >
-              <option value="">Velg</option>
-              {activeDogs.map((dog) => (
-                <option key={dog.id} value={dog.id}>
-                  {dog.name}
-                </option>
-              ))}
-            </select>
-            {validationErrors.dog && (
-              <p className="text-xs text-error mt-1">{validationErrors.dog}</p>
-            )}
-          </div>
+            <div className="p-6 space-y-5">
+              {/* Date/Time Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="input-label">Dato</label>
+                  <DatePicker
+                    selected={huntDate}
+                    onChange={setHuntDate}
+                  />
+                </div>
+                <div>
+                  <label className="input-label">Starttid</label>
+                  <TimePicker
+                    value={startTime}
+                    onChange={setStartTime}
+                  />
+                </div>
+                <div>
+                  <label className="input-label">Sluttid</label>
+                  <TimePicker
+                    value={endTime}
+                    onChange={setEndTime}
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label className="text-xs text-text-muted mb-1 block">
-              Sted {!selectedLocation && !customLocation && <span className="text-error">*</span>}
-            </label>
-            {selectedLocation === '_custom' ? (
-              <div className="relative">
+              {/* Dog/Location Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="input-label">
+                    Hund {!selectedDog && <span className="text-error">*</span>}
+                  </label>
+                  <select
+                    value={selectedDog}
+                    onChange={(e) => setSelectedDog(e.target.value)}
+                    className={`select text-sm ${validationErrors.dog ? 'border-error ring-1 ring-error' : ''}`}
+                  >
+                    <option value="">Velg hund</option>
+                    {activeDogs.map((dog) => (
+                      <option key={dog.id} value={dog.id}>{dog.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="input-label">
+                    Sted {!selectedLocation && !customLocation && <span className="text-error">*</span>}
+                  </label>
+                  {selectedLocation === '_custom' ? (
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={customLocation}
+                        onChange={(e) => setCustomLocation(e.target.value)}
+                        placeholder="Skriv stedsnavn..."
+                        className={`input text-sm pr-8 ${validationErrors.location ? 'border-error ring-1 ring-error' : ''}`}
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => { setSelectedLocation(''); setCustomLocation(''); }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedLocation}
+                      onChange={(e) => {
+                        if (e.target.value === '_custom') {
+                          setSelectedLocation('_custom');
+                          setCustomLocation('');
+                        } else {
+                          setSelectedLocation(e.target.value);
+                        }
+                      }}
+                      className={`select text-sm ${validationErrors.location ? 'border-error ring-1 ring-error' : ''}`}
+                    >
+                      <option value="">Velg sted</option>
+                      {recentLocations.map((loc) => (
+                        <option key={loc} value={loc}>{loc}</option>
+                      ))}
+                      <option value="_custom">+ Nytt sted</option>
+                    </select>
+                  )}
+                </div>
+              </div>
+
+              {/* Weather Widget (Inline) */}
+              {weather && (
+                <div className="bg-zinc-900/50 rounded-lg p-3 border border-zinc-800 flex items-center gap-6 text-sm">
+                  <div className="flex items-center gap-2 text-zinc-300">
+                    <Thermometer className="w-4 h-4 text-primary-500" />
+                    <span>{weather.temperature}°C</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-zinc-300">
+                    <Wind className="w-4 h-4 text-primary-500" />
+                    <span>{weather.wind_speed} m/s {weather.wind_direction}</span>
+                  </div>
+                  <span className="text-zinc-500 border-l border-zinc-800 pl-4">{weather.conditions}</span>
+                </div>
+              )}
+
+              {/* Notes */}
+              <div>
+                <label className="input-label">Notater</label>
+                <textarea
+                  value={quickNote}
+                  onChange={(e) => setQuickNote(e.target.value)}
+                  placeholder="Hvordan var turen?"
+                  className="input text-sm min-h-[100px] resize-none"
+                />
+              </div>
+
+              {/* Action Bar */}
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-800/50">
+                <button
+                  onClick={() => setShowGameModal(true)}
+                  className="flex-1 btn-secondary text-xs sm:text-sm py-2.5 flex items-center justify-center gap-2"
+                  title="Registrer vilt"
+                >
+                  <Target className="w-4 h-4" />
+                  <span className="hidden sm:inline">Vilt</span>
+                  {(Object.values(gameSeen).reduce((a, b) => a + b, 0) > 0 || Object.values(gameHarvested).reduce((a, b) => a + b, 0) > 0) && (
+                    <span className="ml-1 bg-primary-500/20 text-primary-400 text-xs px-1.5 py-0.5 rounded">
+                      {Object.values(gameSeen).reduce((a, b) => a + b, 0) + Object.values(gameHarvested).reduce((a, b) => a + b, 0)}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 btn-secondary text-xs sm:text-sm py-2.5 flex items-center justify-center gap-2"
+                  title="Last opp bilder"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span className="hidden sm:inline">Bilder</span>
+                  {photos.length > 0 && (
+                    <span className="ml-1 bg-primary-500/20 text-primary-400 text-xs px-1.5 py-0.5 rounded">
+                      {photos.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => gpxInputRef.current?.click()}
+                  className="flex-1 btn-secondary text-xs sm:text-sm py-2.5 flex items-center justify-center gap-2"
+                  title="Last opp GPX-spor"
+                >
+                  <Activity className="w-4 h-4" />
+                  <span className="hidden sm:inline">GPX</span>
+                  {matchedTrack && (
+                    <span className="ml-1 bg-emerald-500/20 text-emerald-400 text-xs px-1.5 py-0.5 rounded">
+                      ✓
+                    </span>
+                  )}
+                </button>
                 <input
-                  type="text"
-                  value={customLocation}
-                  onChange={(e) => {
-                    setCustomLocation(e.target.value);
-                    if (validationErrors.location) {
-                      setValidationErrors((prev) => {
-                        const { location, ...rest } = prev;
-                        return rest;
-                      });
-                    }
-                  }}
-                  placeholder="Skriv stedsnavn..."
-                  className={`input text-sm pr-8 ${validationErrors.location ? 'border-error ring-1 ring-error' : ''}`}
-                  autoFocus
+                  type="file"
+                  ref={gpxInputRef}
+                  onChange={handleGpxUpload}
+                  accept=".gpx"
+                  className="hidden"
                 />
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePhotoUpload}
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                />
+
                 <button
-                  onClick={() => {
-                    setSelectedLocation('');
-                    setCustomLocation('');
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary text-xs"
+                  onClick={handleSave}
+                  disabled={createHuntMutation.isPending}
+                  className="flex-[1.5] btn-primary text-xs sm:text-sm py-2.5 flex items-center justify-center gap-2 shadow-lg shadow-primary-900/20"
                 >
-                  ✕
+                  <Send className="w-4 h-4" />
+                  {createHuntMutation.isPending ? 'Lagrer...' : 'Lagre tur'}
                 </button>
               </div>
-            ) : (
-              <select
-                value={selectedLocation}
-                onChange={(e) => {
-                  if (e.target.value === '_custom') {
-                    setSelectedLocation('_custom');
-                    setCustomLocation('');
-                  } else {
-                    setSelectedLocation(e.target.value);
-                  }
-                  if (validationErrors.location) {
-                    setValidationErrors((prev) => {
-                      const { location, ...rest } = prev;
-                      return rest;
-                    });
-                  }
-                }}
-                className={`select text-sm ${validationErrors.location ? 'border-error ring-1 ring-error' : ''}`}
-              >
-                <option value="">Velg</option>
-                {recentLocations.length > 0 ? (
-                  recentLocations.map((loc) => (
-                    <option key={loc} value={loc}>
-                      {loc}
-                    </option>
-                  ))
-                ) : (
-                  <option value="" disabled>Ingen lagrede steder</option>
-                )}
-                <option value="_custom">+ Nytt sted</option>
-              </select>
-            )}
-            {validationErrors.location && (
-              <p className="text-xs text-error mt-1">{validationErrors.location}</p>
-            )}
-          </div>
-        </div>
 
-        {/* Weather display */}
-        {weather && (
-          <div className="mb-4 p-3 bg-background rounded-lg flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <Thermometer className="w-4 h-4 text-primary-400" />
-              <span>{weather.temperature}°C</span>
+              {/* Track Confirmation */}
+              {showTrackConfirm && matchedTrack && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 text-emerald-400">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Spor lagt til: {matchedTrack.distance_km} km</span>
+                  </div>
+                  <button onClick={() => { setMatchedTrack(null); setShowTrackConfirm(false); }} className="text-zinc-500 hover:text-zinc-300">✕</button>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <Wind className="w-4 h-4 text-primary-400" />
-              <span>{weather.wind_speed} m/s {weather.wind_direction}</span>
-            </div>
-            <span className="text-text-muted">{weather.conditions}</span>
           </div>
-        )}
 
-        {/* Notes */}
-        <div className="mb-4">
-          <label className="text-xs text-text-muted mb-1 block">Notater</label>
-          <textarea
-            value={quickNote}
-            onChange={(e) => setQuickNote(e.target.value)}
-            placeholder="Beskriv jaktturen..."
-            className="input text-sm min-h-[120px] resize-none"
-          />
-        </div>
-
-        {/* Game observations button */}
-        <button
-          onClick={() => setShowGameModal(true)}
-          className="w-full mb-4 p-3 bg-background rounded-lg flex items-center justify-between hover:bg-background-lighter transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <Target className="w-5 h-5 text-text-muted" />
-            <span className="text-sm font-medium text-text-primary">Vilt observert/felt</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {(Object.values(gameSeen).reduce((a, b) => a + b, 0) > 0 || Object.values(gameHarvested).reduce((a, b) => a + b, 0) > 0) ? (
-              <span className="text-sm text-primary-400 font-medium">
-                {Object.values(gameSeen).reduce((a, b) => a + b, 0)} sett, {Object.values(gameHarvested).reduce((a, b) => a + b, 0)} felt
-              </span>
-            ) : (
-              <span className="text-sm text-text-muted">Legg til</span>
-            )}
-            <Eye className="w-4 h-4 text-text-muted" />
-          </div>
-        </button>
-
-        {/* Photo upload */}
-        <div className="mb-4">
-          <label className="text-xs text-text-muted mb-1 block">Bilder</label>
-          <div className="flex flex-wrap gap-2">
-            {photos.map((photo, index) => (
-              <div key={index} className="relative w-20 h-20 rounded-lg overflow-hidden group">
-                <img
-                  src={URL.createObjectURL(photo)}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
+          {/* Recent Hunts List */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-lg font-medium text-zinc-200">Siste turer</h3>
+              <div className="flex gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                  <input
+                    type="text"
+                    placeholder="Søk..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-zinc-900 border border-zinc-800 rounded-lg pl-9 pr-3 py-1.5 text-sm w-40 focus:w-60 transition-all focus:border-primary-500 focus:outline-none"
+                  />
+                </div>
                 <button
-                  onClick={() => removePhoto(index)}
-                  className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`p-1.5 rounded-lg border ${showFilters ? 'bg-primary-500/10 border-primary-500/30 text-primary-400' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'}`}
                 >
-                  ✕
+                  <Filter className="w-4 h-4" />
                 </button>
               </div>
-            ))}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-20 h-20 rounded-lg bg-background border border-dashed border-text-muted/30 flex flex-col items-center justify-center text-text-muted hover:text-text-primary hover:border-text-primary transition-colors"
-            >
-              <Camera className="w-6 h-6 mb-1" />
-              <span className="text-[10px]">Legg til</span>
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handlePhotoUpload}
-              multiple
-              accept="image/*"
-              className="hidden"
-            />
-          </div>
-        </div>
-
-        {/* GPS track confirmation */}
-        {showTrackConfirm && matchedTrack && (
-          <div className="bg-success/10 border border-success/30 rounded-lg p-3 mb-4">
-            <div className="flex items-center justify-center gap-3 text-sm">
-              <CheckCircle className="w-5 h-5 text-success" />
-              <span className="font-semibold">{currentDogName}</span>
-              <span className="text-text-muted">•</span>
-              <span>{matchedTrack.distance_km} km</span>
-              <span className="text-text-muted">•</span>
-              <span>
-                {Math.round(matchedTrack.duration_minutes / 60)}t{' '}
-                {matchedTrack.duration_minutes % 60}m
-              </span>
-              <button
-                onClick={() => {
-                  setMatchedTrack(null);
-                  setShowTrackConfirm(false);
-                }}
-                className="text-xs text-text-muted hover:text-text-primary ml-2"
-              >
-                ✕
-              </button>
             </div>
-          </div>
-        )}
 
-        {/* Action buttons */}
-        <div className="flex flex-col items-center gap-2">
-          {!matchedTrack && (
-            <div className="flex flex-col items-center w-full gap-2">
-              <button
-                onClick={() => handleGarminSync()}
-                disabled={isSyncing || !selectedDog}
-                className="w-full flex items-center justify-center gap-2 py-2 text-sm text-text-muted hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-dashed border-text-muted/30 rounded-lg"
-              >
-                <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'Synkroniserer...' : 'Synk med Garmin'}
-              </button>
-
-              <div className="flex items-center gap-2 w-full">
-                <div className="h-px bg-text-muted/20 flex-1" />
-                <span className="text-[10px] text-text-muted uppercase">Eller</span>
-                <div className="h-px bg-text-muted/20 flex-1" />
+            {/* Filters Panel */}
+            {showFilters && (
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-3 grid grid-cols-3 gap-2 animate-slide-down">
+                <select value={filterGame} onChange={(e) => setFilterGame(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-sm text-zinc-300">
+                  <option value="">Alle arter</option>
+                  {gameTypes.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                </select>
+                <select value={filterLocation} onChange={(e) => setFilterLocation(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-sm text-zinc-300">
+                  <option value="">Alle steder</option>
+                  {recentLocations.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+                <select value={filterDog} onChange={(e) => setFilterDog(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-sm text-zinc-300">
+                  <option value="">Alle hunder</option>
+                  {activeDogs.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
               </div>
-
-              <button
-                onClick={() => gpxInputRef.current?.click()}
-                className="w-full flex items-center justify-center gap-2 py-2 text-sm text-text-muted hover:text-text-primary transition-colors border border-dashed border-text-muted/30 rounded-lg"
-              >
-                <Upload className="w-4 h-4" />
-                Last opp GPX-fil
-              </button>
-              <input
-                type="file"
-                ref={gpxInputRef}
-                onChange={handleGpxUpload}
-                accept=".gpx"
-                className="hidden"
-              />
-            </div>
-          )}
-
-          <button
-            onClick={handleSave}
-            disabled={createHuntMutation.isPending || !selectedDog || (!selectedLocation && !customLocation)}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-primary-700 hover:bg-primary-600 rounded-lg text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-700/20 mt-2"
-          >
-            <Send className="w-4 h-4" />
-            {createHuntMutation.isPending ? 'Lagrer...' : 'Lagre jakttur'}
-          </button>
-        </div>
-      </div>
-
-      {/* Hunt history section */}
-      <div id="hunt-history" className="p-4 bg-background-light rounded-xl space-y-4">
-        {/* Season navigation */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigateSeason('prev')}
-            disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1}
-            className="p-2 text-text-muted hover:text-primary-400 transition-colors disabled:opacity-30"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-
-          <div className="text-center">
-            <div className="text-xl font-bold text-text-primary mb-1">
-              Sesong {selectedSeason}
-            </div>
-            <div className="flex items-center justify-center gap-4 text-sm">
-              <span className="text-text-primary font-medium">{seasonStats.total_hunts} turer</span>
-              <span className="text-text-muted">•</span>
-              <span className="text-primary-400">{seasonStats.total_seen} sett</span>
-              <span className="text-text-muted">•</span>
-              <span className="text-success">{seasonStats.total_harvested} felt</span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => navigateSeason('next')}
-            disabled={availableSeasons.indexOf(selectedSeason) === 0}
-            className="p-2 text-text-muted hover:text-primary-400 transition-colors disabled:opacity-30"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Search and filter */}
-        <div className="flex gap-2">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-            <input
-              type="text"
-              placeholder="Søk i jaktturer..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-background border-none rounded-lg pl-9 pr-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:ring-1 focus:ring-primary-500"
-            />
-          </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-primary-700/30 text-primary-400' : 'bg-background text-text-muted hover:text-text-primary'
-              }`}
-          >
-            <Filter className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Advanced filters */}
-        {showFilters && (
-          <div className="space-y-2 pt-2 border-t border-background-lighter">
-            <div className="grid grid-cols-3 gap-2">
-              <select
-                value={filterGame}
-                onChange={(e) => setFilterGame(e.target.value)}
-                className="bg-background text-sm rounded-lg px-2 py-1.5 text-text-primary border-none"
-              >
-                <option value="">Vilt</option>
-                {gameTypes.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filterLocation}
-                onChange={(e) => setFilterLocation(e.target.value)}
-                className="bg-background text-sm rounded-lg px-2 py-1.5 text-text-primary border-none"
-              >
-                <option value="">Sted</option>
-                {recentLocations.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filterDog}
-                onChange={(e) => setFilterDog(e.target.value)}
-                className="bg-background text-sm rounded-lg px-2 py-1.5 text-text-primary border-none"
-              >
-                <option value="">Hund</option>
-                {activeDogs.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {(filterGame || filterLocation || filterDog) && (
-              <button
-                onClick={() => {
-                  setFilterGame('');
-                  setFilterLocation('');
-                  setFilterDog('');
-                }}
-                className="text-xs text-text-muted hover:text-error transition-colors"
-              >
-                Nullstill filtre
-              </button>
             )}
-          </div>
-        )}
 
-        {/* Link to statistics */}
-        <div className="text-center pt-2 border-t border-background-lighter">
-          <button
-            onClick={() => navigate('/statistics')}
-            className="text-xs text-primary-400 hover:text-primary-300"
-          >
-            Se hundestatistikk →
-          </button>
+            <div className="space-y-3">
+              {isLoading ? (
+                <>
+                  <HuntCardSkeleton />
+                  <HuntCardSkeleton />
+                </>
+              ) : filteredHunts.length === 0 ? (
+                <div className="card p-12 text-center border-dashed border-zinc-800">
+                  <MapPin className="w-12 h-12 mx-auto text-zinc-700 mb-4" />
+                  <p className="text-zinc-500">Ingen turer funnet.</p>
+                </div>
+              ) : (
+                filteredHunts.map((hunt: Hunt) => (
+                  <div
+                    key={hunt.id}
+                    onClick={() => navigate(`/hunt/${hunt.id}`)}
+                    className="card hover:border-primary-500/30 hover:bg-zinc-900/80 transition-all cursor-pointer group"
+                  >
+                    <div className="p-5">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-semibold text-zinc-100 group-hover:text-primary-400 transition-colors">{hunt.title}</h3>
+                          <div className="flex items-center gap-2 text-xs text-zinc-500 mt-1">
+                            <Calendar className="w-3 h-3" />
+                            <span>{format(new Date(hunt.date), 'dd.MM.yyyy')}</span>
+                            <span>•</span>
+                            <MapPin className="w-3 h-3" />
+                            <span>{hunt.location.name}</span>
+                          </div>
+                        </div>
+                        {hunt.photos && hunt.photos.length > 0 && (
+                          <div className="bg-zinc-800/50 p-1.5 rounded-md">
+                            <Image className="w-4 h-4 text-zinc-400" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Stats Row */}
+                      <div className="flex items-center gap-4 pt-3 border-t border-zinc-800/50">
+                        <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                          <Dog className="w-3.5 h-3.5" />
+                          <span>{hunt.dogs.length} hund{hunt.dogs.length !== 1 ? 'er' : ''}</span>
+                        </div>
+                        {(hunt.game_seen.length > 0 || hunt.game_harvested.length > 0) && (
+                          <>
+                            <div className="w-px h-3 bg-zinc-800" />
+                            <div className="flex gap-3 text-xs">
+                              {hunt.game_seen.length > 0 && (
+                                <span className="text-primary-400 font-medium">
+                                  {hunt.game_seen.reduce((a, g) => a + g.count, 0)} sett
+                                </span>
+                              )}
+                              {hunt.game_harvested.length > 0 && (
+                                <span className="text-emerald-400 font-medium">
+                                  {hunt.game_harvested.reduce((a, g) => a + g.count, 0)} felt
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Hunt list */}
-      <div className="space-y-3">
-        {isLoading ? (
-          <div className="space-y-3">
-            <HuntCardSkeleton />
-            <HuntCardSkeleton />
-            <HuntCardSkeleton />
-          </div>
-        ) : filteredHunts.length === 0 ? (
-          <div className="card p-8 text-center">
-            <MapPin className="w-10 h-10 mx-auto text-text-muted mb-3" />
-            <p className="text-text-muted">
-              {hunts.length === 0
-                ? 'Ingen jaktturer ennå. Registrer din første jakttur!'
-                : 'Ingen jaktturer matcher filtrene'}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredHunts.map((hunt: Hunt) => (
-              <div
-                key={hunt.id}
-                onClick={() => navigate(`/hunt/${hunt.id}`)}
-                className="card-hover p-4 cursor-pointer"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-text-primary">{hunt.title}</h3>
-                  <span className="text-xs text-text-muted">
-                    {format(new Date(hunt.date), 'dd.MM.yyyy')}
-                  </span>
+        {/* Right Column: Stats & Info */}
+        <div className="space-y-6">
+
+          {/* Season Stats Card */}
+          <div className="card bg-gradient-to-br from-zinc-900 to-zinc-900/50 border-zinc-800">
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-semibold text-zinc-100 flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-amber-500" /> Sesong {selectedSeason}
+                </h3>
+                <div className="flex gap-1">
+                  <button onClick={() => navigateSeason('next')} disabled={availableSeasons.indexOf(selectedSeason) === 0} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4 rotate-180" /></button>
+                  <button onClick={() => navigateSeason('prev')} disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-text-muted">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                    {hunt.location.name}
-                  </div>
-                  {hunt.dogs.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Dog className="w-4 h-4" />
-                      {hunt.dogs.length}
-                    </div>
-                  )}
-                  {hunt.photos && hunt.photos.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Camera className="w-4 h-4" />
-                      {hunt.photos.length}
-                    </div>
-                  )}
-                </div>
-                {(hunt.game_seen.length > 0 || hunt.game_harvested.length > 0) && (
-                  <div className="mt-2 flex gap-4 text-xs">
-                    {hunt.game_seen.length > 0 && (
-                      <span className="text-primary-400">
-                        {hunt.game_seen.reduce((a, g) => a + g.count, 0)} sett
-                      </span>
-                    )}
-                    {hunt.game_harvested.length > 0 && (
-                      <span className="text-success">
-                        {hunt.game_harvested.reduce((a, g) => a + g.count, 0)} felt
-                      </span>
-                    )}
-                  </div>
-                )}
               </div>
-            ))}
+
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="p-3 bg-zinc-800/30 rounded-lg">
+                  <div className="text-2xl font-bold text-white">{seasonStats.total_hunts}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Turer</div>
+                </div>
+                <div className="p-3 bg-zinc-800/30 rounded-lg">
+                  <div className="text-2xl font-bold text-primary-400">{seasonStats.total_seen}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Sett</div>
+                </div>
+                <div className="p-3 bg-zinc-800/30 rounded-lg">
+                  <div className="text-2xl font-bold text-emerald-400">{seasonStats.total_harvested}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Felt</div>
+                </div>
+              </div>
+
+              <button onClick={() => navigate('/statistics')} className="w-full mt-4 btn-outline text-xs py-2">
+                Se full statistikk
+              </button>
+            </div>
           </div>
-        )}
+
+
+
+        </div>
       </div>
 
       {/* Game modal */}
@@ -1111,12 +972,12 @@ export default function Dashboard() {
                 const seen = gameSeen[game.id] || 0;
                 const harvested = gameHarvested[game.id] || 0;
                 return (
-                  <div key={game.id} className="bg-background rounded-lg p-3">
+                  <div key={game.id} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="font-medium text-text-primary">{game.name}</span>
+                      <span className="font-medium text-zinc-100">{game.name}</span>
                       <button
                         onClick={() => resetGameCount(game.id)}
-                        className="text-text-muted hover:text-error transition-colors p-1"
+                        className="text-zinc-500 hover:text-red-400 transition-colors p-1"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1124,19 +985,19 @@ export default function Dashboard() {
 
                     <div className="grid grid-cols-2 gap-4">
                       {/* Seen */}
-                      <div className="bg-background-lighter rounded-lg p-2 flex items-center justify-between">
-                        <span className="text-sm font-medium text-text-secondary">Sett</span>
+                      <div className="bg-zinc-950 rounded-lg p-2 flex items-center justify-between border border-zinc-800">
+                        <span className="text-xs font-medium text-zinc-400">Sett</span>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => updateGameCount(setGameSeen, game.id, -1)}
-                            className="w-8 h-8 rounded bg-background text-text-muted hover:text-text-primary flex items-center justify-center"
+                            className="w-6 h-6 rounded bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center"
                           >
                             -
                           </button>
                           <span className="w-6 text-center font-medium text-primary-400">{seen}</span>
                           <button
                             onClick={() => updateGameCount(setGameSeen, game.id, 1)}
-                            className="w-8 h-8 rounded bg-background text-text-muted hover:text-text-primary flex items-center justify-center"
+                            className="w-6 h-6 rounded bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center"
                           >
                             +
                           </button>
@@ -1144,19 +1005,19 @@ export default function Dashboard() {
                       </div>
 
                       {/* Harvested */}
-                      <div className="bg-background-lighter rounded-lg p-2 flex items-center justify-between">
-                        <span className="text-sm font-medium text-text-secondary">Felt</span>
+                      <div className="bg-zinc-950 rounded-lg p-2 flex items-center justify-between border border-zinc-800">
+                        <span className="text-xs font-medium text-zinc-400">Felt</span>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => updateGameCount(setGameHarvested, game.id, -1)}
-                            className="w-8 h-8 rounded bg-background text-text-muted hover:text-text-primary flex items-center justify-center"
+                            className="w-6 h-6 rounded bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center"
                           >
                             -
                           </button>
-                          <span className="w-6 text-center font-medium text-success">{harvested}</span>
+                          <span className="w-6 text-center font-medium text-emerald-400">{harvested}</span>
                           <button
                             onClick={() => updateGameCount(setGameHarvested, game.id, 1)}
-                            className="w-8 h-8 rounded bg-background text-text-muted hover:text-text-primary flex items-center justify-center"
+                            className="w-6 h-6 rounded bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center"
                           >
                             +
                           </button>
@@ -1168,7 +1029,7 @@ export default function Dashboard() {
               })}
 
             {!gameTypes.some((g) => (gameSeen[g.id] || 0) > 0 || (gameHarvested[g.id] || 0) > 0) && (
-              <div className="text-center py-8 text-text-muted bg-background-lighter/50 rounded-lg border border-dashed border-text-muted/20">
+              <div className="text-center py-8 text-zinc-500 bg-zinc-900/50 rounded-lg border border-dashed border-zinc-800">
                 <p>Ingen vilt registrert enda</p>
                 <p className="text-xs mt-1">Velg en art nedenfor for å legge til</p>
               </div>
@@ -1176,15 +1037,15 @@ export default function Dashboard() {
           </div>
 
           <div>
-            <h3 className="text-xs font-medium text-text-muted uppercase tracking-wider mb-3">Legg til art</h3>
+            <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">Legg til art</h3>
             <div className="grid grid-cols-3 gap-2">
               {gameTypes
                 .filter((g) => !((gameSeen[g.id] || 0) > 0 || (gameHarvested[g.id] || 0) > 0))
                 .map((game) => (
                   <button
                     key={game.id}
-                    onClick={() => updateGameCount(setGameSeen, game.id, 0)}
-                    className="p-3 bg-background-lighter hover:bg-primary-500/10 hover:text-primary-400 rounded-lg text-sm font-medium transition-colors border border-transparent hover:border-primary-500/20 text-left"
+                    onClick={() => updateGameCount(setGameSeen, game.id, 1)}
+                    className="p-3 bg-zinc-900 hover:bg-primary-500/10 hover:text-primary-400 rounded-lg text-sm font-medium transition-colors border border-zinc-800 hover:border-primary-500/20 text-left"
                   >
                     + {game.name}
                   </button>
@@ -1192,10 +1053,10 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-background-lighter">
+          <div className="pt-4 border-t border-zinc-800">
             <button
               onClick={() => setShowGameModal(false)}
-              className="w-full py-3 bg-primary-700 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors"
+              className="w-full btn-primary py-3"
             >
               Ferdig
             </button>

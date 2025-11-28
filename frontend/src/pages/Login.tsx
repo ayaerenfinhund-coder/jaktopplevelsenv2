@@ -81,12 +81,12 @@ export default function Login() {
       <div className="w-full max-w-[400px] bg-zinc-900/40 border border-white/5 rounded-2xl p-8 shadow-2xl backdrop-blur-md relative z-20">
         {/* Logo & Title */}
         <div className="flex flex-col items-center mb-10">
-          <div className="w-16 h-16 bg-primary-900/20 rounded-2xl flex items-center justify-center mb-6 border border-primary-500/10 shadow-lg shadow-primary-900/10 group relative overflow-hidden">
+          <div className="w-24 h-24 bg-primary-900/20 rounded-2xl flex items-center justify-center mb-6 border border-primary-500/10 shadow-lg shadow-primary-900/10 group relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-tr from-primary-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <img
               src="/logo.png"
               alt="Logo"
-              className="w-10 h-10 object-contain relative z-10 opacity-80 group-hover:opacity-100 transition-opacity"
+              className="w-14 h-14 object-contain relative z-10 opacity-80 group-hover:opacity-100 transition-opacity"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
@@ -95,7 +95,7 @@ export default function Login() {
             />
             <svg
               viewBox="0 0 24 24"
-              className="hidden w-8 h-8 text-primary-400 relative z-10"
+              className="hidden w-12 h-12 text-primary-400 relative z-10"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
@@ -105,10 +105,7 @@ export default function Login() {
               <path d="M2 12l10 5 10-5" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Jaktopplevelsen</h1>
-          <p className="text-zinc-500 mt-2 text-sm text-center font-medium tracking-wide">
-            YOUR DIGITAL HUNTING COMPANION
-          </p>
+          <h1 className="text-4xl font-bold text-white tracking-tight">Jaktopplevelsen</h1>
         </div>
 
         {/* Login Button */}
@@ -144,6 +141,6 @@ export default function Login() {
           </button>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

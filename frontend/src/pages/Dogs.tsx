@@ -183,10 +183,10 @@ export default function Dogs() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-text-primary">Mine hunder</h1>
-          <p className="text-text-secondary mt-1">
+          <h1 className="text-2xl md:text-3xl font-bold text-text-primary">Mine hunder</h1>
+          <p className="text-text-secondary mt-1 text-sm md:text-base">
             Administrer hundene dine og deres Garmin-halsbånd
           </p>
         </div>
@@ -198,6 +198,7 @@ export default function Dogs() {
             setEditingDog(null);
             setShowAddModal(true);
           }}
+          className="w-full md:w-auto justify-center"
         >
           Legg til hund
         </Button>
@@ -209,7 +210,7 @@ export default function Dogs() {
           Aktive hunder ({activeDogs.length})
         </h2>
         {activeDogs.length === 0 ? (
-          <div className="card p-12 text-center">
+          <div className="card p-6 md:p-12 text-center">
             <DogIcon className="w-12 h-12 mx-auto text-text-muted mb-4" />
             <p className="text-text-muted mb-4">Ingen aktive hunder</p>
             <Button
@@ -220,6 +221,7 @@ export default function Dogs() {
                 setEditingDog(null);
                 setShowAddModal(true);
               }}
+              className="w-full sm:w-auto justify-center"
             >
               Legg til din første hund
             </Button>
