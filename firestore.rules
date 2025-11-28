@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Brukere
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Hunder
+    match /users/{userId}/dogs/{dogId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Jaktturer
+    match /users/{userId}/hunts/{huntId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Spor
+    match /users/{userId}/hunts/{huntId}/tracks/{trackId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Bilder (metadata)
+    match /users/{userId}/hunts/{huntId}/photos/{photoId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

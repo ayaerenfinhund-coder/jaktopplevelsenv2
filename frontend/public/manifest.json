@@ -1,0 +1,18 @@
+{
+  "name": "Jaktopplevelsen",
+  "short_name": "Jaktlogg",
+  "description": "Din digitale jaktdagbok med GPS-sporing",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#D4752E",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

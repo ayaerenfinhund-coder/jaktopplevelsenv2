@@ -1,0 +1,5 @@
+firebase-functions>=0.4.0
+firebase-admin>=6.2.0
+garminconnect>=0.2.15
+gpxpy>=1.6.1
+requests>=2.31.0

@@ -1,0 +1,12 @@
+# Ensure correct MIME types for static assets
+/assets/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/assets/*.css
+  Content-Type: text/css; charset=utf-8
+
+/*.png
+  Content-Type: image/png
+
+/*.svg
+  Content-Type: image/svg+xml
