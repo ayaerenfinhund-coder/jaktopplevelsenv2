@@ -178,22 +178,34 @@ class ApiClient {
                     const gpx = parser.parseFromString(gpxString, "text/xml");
                     const geojson = toGeoJSON.gpx(gpx);
 
+                    // Find the first LineString feature (track or route)
+                    const trackFeature = geojson.features?.find(f =>
+                        f.geometry.type === 'LineString' || f.geometry.type === 'MultiLineString'
+                    );
+
+                    if (!trackFeature) {
+                        throw new Error('Ingen spor (track/route) funnet i GPX-filen.');
+                    }
+
                     // Try to extract start time from GPX
                     let startTime = new Date().toISOString();
-                    const feature = geojson.features?.[0];
 
-                    if (feature?.properties?.coordTimes?.[0]) {
-                        startTime = feature.properties.coordTimes[0];
-                    } else if (feature?.properties?.time) {
-                        startTime = feature.properties.time;
+                    if (trackFeature.properties?.coordTimes?.[0]) {
+                        startTime = trackFeature.properties.coordTimes[0];
+                    } else if (trackFeature.properties?.time) {
+                        startTime = trackFeature.properties.time;
+                    } else {
+                        // Fallback: check metadata time
+                        const metadataTime = gpx.querySelector('metadata > time')?.textContent;
+                        if (metadataTime) startTime = metadataTime;
                     }
 
                     // Basic statistics calculation
-                    const stats = this.calculateTrackStats(geojson);
+                    const stats = this.calculateTrackStats(trackFeature);
 
                     resolve({
                         name: file.name.replace('.gpx', ''),
-                        geojson,
+                        geojson, // Keep all features (waypoints etc) for map
                         statistics: stats,
                         start_time: startTime,
                         source: 'manual_upload'
@@ -207,16 +219,20 @@ class ApiClient {
         });
     }
 
-    private calculateTrackStats(geojson: any) {
+    private calculateTrackStats(feature: any) {
         // Simple client-side stats calculation
         // This is a simplified version. Real distance calc requires Haversine formula.
         let distance = 0;
-        const coords = geojson.features?.[0]?.geometry?.coordinates || [];
+        const coords = feature.geometry.coordinates || [];
 
-        for (let i = 1; i < coords.length; i++) {
-            const [lon1, lat1] = coords[i - 1];
-            const [lon2, lat2] = coords[i];
-            distance += this.haversineDistance(lat1, lon1, lat2, lon2);
+        // Handle MultiLineString if necessary (flatten or iterate)
+        // For now assuming LineString as per toGeoJSON output for simple tracks
+        if (feature.geometry.type === 'LineString') {
+            for (let i = 1; i < coords.length; i++) {
+                const [lon1, lat1] = coords[i - 1];
+                const [lon2, lat2] = coords[i];
+                distance += this.haversineDistance(lat1, lon1, lat2, lon2);
+            }
         }
 
         return {
