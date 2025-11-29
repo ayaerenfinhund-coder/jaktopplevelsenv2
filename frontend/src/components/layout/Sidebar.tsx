@@ -103,20 +103,26 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
-          onClick={onClose}
-        />
-      )}
+      {/* Mobile overlay - with smooth fade */}
+      <div
+        className={clsx(
+          'fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300',
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        )}
+        onClick={onClose}
+      />
 
-      {/* Sidebar */}
+      {/* Sidebar - smoother transition */}
       <aside
         className={clsx(
-          'fixed top-0 left-0 bottom-0 w-64 bg-zinc-900/95 backdrop-blur-xl border-r border-zinc-800/50 z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:top-14 lg:z-30',
+          'fixed top-0 left-0 bottom-0 w-64 bg-zinc-900/95 backdrop-blur-xl border-r border-zinc-800/50 z-50 transform transition-all duration-500 ease-out lg:translate-x-0 lg:top-14 lg:z-30',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
+        style={{
+          willChange: 'transform',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden'
+        }}
       >
         {/* Mobile close button */}
         <div className="lg:hidden flex items-center justify-between p-4 border-b border-zinc-800">
@@ -238,55 +244,55 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </ul>
           </div>
 
-          {/* Statistics - more compact */}
-          <div className="p-3 border-t border-zinc-800">
-            <h3 className="px-3 text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-              Statistikk
-            </h3>
-            <div className="px-3 space-y-3">
-              <div>
-                <div className="text-xs text-text-muted">Aktive hunder</div>
-                <div className="text-xl font-semibold text-primary-400">
-                  {activeDogs}
+          {/* Spacer to push bottom section down */}
+          <div className="flex-1" />
+
+          {/* Bottom section - always visible, no scrolling needed */}
+          <div className="border-t border-zinc-800 bg-zinc-900/98">
+            {/* Statistics - compact */}
+            <div className="p-3">
+              <div className="px-3 flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-text-muted">Aktive hunder</div>
+                  <div className="text-lg font-semibold text-primary-400">
+                    {activeDogs}
+                  </div>
                 </div>
+                <button
+                  onClick={() => {
+                    navigate('/statistics');
+                    onClose();
+                  }}
+                  className="text-xs text-primary-400 hover:text-primary-300 transition-colors px-2 py-1 hover:bg-primary-500/10 rounded"
+                >
+                  Stats →
+                </button>
               </div>
+            </div>
+
+            {/* PWA Install Button - More visible */}
+            {isInstallable && !isInstalled && (
+              <div className="p-3 border-t border-zinc-800">
+                <button
+                  onClick={handleInstallApp}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 rounded-lg transition-all shadow-lg shadow-primary-900/20 hover:shadow-primary-900/40"
+                >
+                  <Smartphone className="w-4 h-4" />
+                  <span>Installer som app</span>
+                </button>
+              </div>
+            )}
+
+            {/* Export button */}
+            <div className="p-3 border-t border-zinc-800">
               <button
-                onClick={() => {
-                  navigate('/statistics');
-                  onClose();
-                }}
-                className="text-xs text-primary-400 hover:text-primary-300 transition-colors"
+                onClick={handleExport}
+                className="w-full btn-outline btn-sm"
               >
-                Se full statistikk →
+                <Download className="w-4 h-4 mr-2" />
+                Eksporter data
               </button>
             </div>
-          </div>
-
-          {/* PWA Install Button - Subtle at bottom */}
-          {isInstallable && !isInstalled && (
-            <div className="p-3 border-t border-zinc-800 mt-auto">
-              <button
-                onClick={handleInstallApp}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-400 hover:text-primary-400 hover:bg-zinc-800/50 rounded-lg transition-colors"
-              >
-                <Smartphone className="w-4 h-4" />
-                <span>Installer som app</span>
-              </button>
-            </div>
-          )}
-
-          {/* Export button */}
-          <div className={clsx(
-            'p-3 border-t border-zinc-800',
-            !isInstallable && 'mt-auto'
-          )}>
-            <button
-              onClick={handleExport}
-              className="w-full btn-outline btn-sm"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Eksporter data
-            </button>
           </div>
         </div>
       </aside>
