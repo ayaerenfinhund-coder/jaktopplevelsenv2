@@ -8,23 +8,23 @@ import {
   Dog,
   Camera,
   Send,
-  RefreshCw,
-  CheckCircle,
+  Trash2,
+  Zap,
+  Trophy,
+  Activity,
   Thermometer,
   Wind,
   Target,
-  Eye,
-  Upload,
-  ChevronLeft,
-  ChevronRight,
+  CheckCircle,
   Calendar,
-  Image,
-  Trash2,
-  Zap,
-  Cloud,
-  Trophy,
-  Activity
+  Image as ImageIcon,
+  ChevronRight
 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import SeasonStatsChart from '../components/dashboard/SeasonStatsChart';
+import AuroraBackground from '../components/common/AuroraBackground';
+import TiltCard from '../components/common/TiltCard';
+import confetti from 'canvas-confetti';
 import { format } from 'date-fns';
 import { DatePicker, TimePicker } from '../components/common/CustomPickers';
 import Modal from '../components/common/Modal';
@@ -33,6 +33,7 @@ import GarminLoginModal from '../components/common/GarminLoginModal';
 import toast from 'react-hot-toast';
 import { apiClient } from '../services/apiClient';
 import { useAppStore } from '../store/useAppStore';
+import { useAuth } from '../hooks/useAuth';
 import type { Hunt } from '../types';
 
 // Game types
@@ -80,6 +81,7 @@ function getHuntingSeason(date: string): string {
 export default function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,7 +100,6 @@ export default function Dashboard() {
     setLastSelectedLocation,
     addLocation,
     lastAutoSyncTime,
-    setLastAutoSyncTime,
     quickFilterActive,
   } = useAppStore();
 
@@ -129,10 +130,8 @@ export default function Dashboard() {
 
   // Weather
   const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
 
   // GPS sync
-  const [isSyncing, setIsSyncing] = useState(false);
   const [matchedTrack, setMatchedTrack] = useState<GarminTrack | null>(null);
   const [showTrackConfirm, setShowTrackConfirm] = useState(false);
   const [showGarminLogin, setShowGarminLogin] = useState(false);
@@ -146,13 +145,11 @@ export default function Dashboard() {
 
   // Date picker
   const [huntDate, setHuntDate] = useState<Date>(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Form validation
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Draft auto-save
-  const [hasDraft, setHasDraft] = useState(false);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
   const DRAFT_KEY = 'jaktopplevelsen_hunt_draft';
 
@@ -160,7 +157,7 @@ export default function Dashboard() {
   const MIN_SYNC_INTERVAL = 1800000; // 30 minutes
 
   // REAL DATA: Fetch hunts from API
-  const { data: hunts = [], isLoading, error, refetch } = useQuery({
+  const { data: hunts = [], isLoading, error } = useQuery({
     queryKey: ['hunts'],
     queryFn: () => apiClient.getHunts({ limit: 100 }),
     staleTime: 5 * 60 * 1000,
@@ -190,6 +187,14 @@ export default function Dashboard() {
         });
       }
 
+      // Confetti explosion
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#eab308', '#10b981', '#ffffff']
+      });
+
       queryClient.invalidateQueries({ queryKey: ['hunts'] });
       toast.success('Jakttur lagret!');
       clearForm();
@@ -206,7 +211,6 @@ export default function Dashboard() {
       try {
         const draft = JSON.parse(savedDraft);
         if (draft.quickNote || Object.keys(draft.gameSeen || {}).length > 0) {
-          setHasDraft(true);
           setShowDraftBanner(true);
         }
       } catch (e) {
@@ -231,7 +235,6 @@ export default function Dashboard() {
 
       if (quickNote || Object.keys(gameSeen).length > 0) {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-        setHasDraft(true);
       }
     };
 
@@ -261,7 +264,6 @@ export default function Dashboard() {
 
   const clearDraft = () => {
     localStorage.removeItem(DRAFT_KEY);
-    setHasDraft(false);
     setShowDraftBanner(false);
   };
 
@@ -284,7 +286,6 @@ export default function Dashboard() {
         return;
       }
 
-      setIsLoadingWeather(true);
       try {
         const searchUrl = `https://ws.geonorge.no/stedsnavn/v1/navn?sok=${encodeURIComponent(loc)}&maxAnt=1&filtrer=navn`;
         const searchResp = await fetch(searchUrl);
@@ -321,8 +322,6 @@ export default function Dashboard() {
         }
       } catch (error) {
         console.error('Kunne ikke hente vær:', error);
-      } finally {
-        setIsLoadingWeather(false);
       }
     };
 
@@ -343,8 +342,6 @@ export default function Dashboard() {
     }
   }, [selectedLocation, setLastSelectedLocation]);
 
-  const currentDogName = activeDogs.find((d) => d.id === selectedDog)?.name || 'Velg hund';
-
   // REAL: Sync with Garmin
   const handleGarminSync = async (silent = false) => {
     if (!silent) {
@@ -362,9 +359,7 @@ export default function Dashboard() {
     }
   };
 
-  const removePhoto = (index: number) => {
-    setPhotos(photos.filter((_, i) => i !== index));
-  };
+
 
   // Time
   const [startTime, setStartTime] = useState(format(new Date(), 'HH:mm'));
@@ -413,6 +408,13 @@ export default function Dashboard() {
   }, [selectedDog, lastAutoSyncTime]);
 
   const handleSave = async () => {
+    // Check authentication first
+    if (!user) {
+      toast.error('Du er ikke innlogget. Vennligst logg inn på nytt.');
+      navigate('/login');
+      return;
+    }
+
     const errors: Record<string, string> = {};
 
     if (!selectedDog) {
@@ -541,22 +543,30 @@ export default function Dashboard() {
   const seasonStats = {
     total_hunts: filteredHunts.length,
     total_seen: filteredHunts.reduce(
-      (acc, h) => acc + h.game_seen.reduce((a, g) => a + g.count, 0),
+      (acc: number, h: any) => acc + h.game_seen.reduce((a: number, g: any) => a + g.count, 0),
       0
     ),
     total_harvested: filteredHunts.reduce(
-      (acc, h) => acc + h.game_harvested.reduce((a, g) => a + g.count, 0),
+      (acc: number, h: any) => acc + h.game_harvested.reduce((a: number, g: any) => a + g.count, 0),
       0
     ),
   };
 
   return (
-    <div className="space-y-8">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-8 relative"
+    >
+      <AuroraBackground />
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Oversikt</h1>
-          <p className="text-zinc-400 mt-1">Loggfør dine jaktopplevelser</p>
+          <h1 className="text-4xl font-bold tracking-tight text-white mb-2">
+            Hei, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-emerald-400">{user?.displayName?.split(' ')[0] || 'Jeger'}</span> 👋
+          </h1>
+          <p className="text-zinc-400 text-lg">Logg jaktturen her</p>
         </div>
 
       </div>
@@ -596,7 +606,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-8">
 
           {/* Quick Log Card */}
-          <div className="card overflow-hidden border-zinc-800/60">
+          <div className="card overflow-hidden border-zinc-800/60 bg-zinc-900/40">
             <div className="card-header bg-zinc-900/50 flex justify-between items-center py-3">
               <h2 className="font-semibold text-zinc-100 flex items-center gap-2 text-sm uppercase tracking-wider">
                 <Zap className="w-4 h-4 text-primary-500" /> Hurtigregistrering
@@ -726,11 +736,11 @@ export default function Dashboard() {
               <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-800/50">
                 <button
                   onClick={() => setShowGameModal(true)}
-                  className="flex-1 btn-secondary text-xs sm:text-sm py-2.5 flex items-center justify-center gap-2"
+                  className="flex-1 btn-secondary text-xs sm:text-sm py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-14 sm:h-auto"
                   title="Registrer vilt"
                 >
                   <Target className="w-4 h-4" />
-                  <span className="hidden sm:inline">Vilt</span>
+                  <span className="text-[10px] sm:text-sm leading-none sm:leading-normal">Vilt</span>
                   {(Object.values(gameSeen).reduce((a, b) => a + b, 0) > 0 || Object.values(gameHarvested).reduce((a, b) => a + b, 0) > 0) && (
                     <span className="ml-1 bg-primary-500/20 text-primary-400 text-xs px-1.5 py-0.5 rounded">
                       {Object.values(gameSeen).reduce((a, b) => a + b, 0) + Object.values(gameHarvested).reduce((a, b) => a + b, 0)}
@@ -740,11 +750,11 @@ export default function Dashboard() {
 
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 btn-secondary text-xs sm:text-sm py-2.5 flex items-center justify-center gap-2"
+                  className="flex-1 btn-secondary text-xs sm:text-sm py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-14 sm:h-auto"
                   title="Last opp bilder"
                 >
                   <Camera className="w-4 h-4" />
-                  <span className="hidden sm:inline">Bilder</span>
+                  <span className="text-[10px] sm:text-sm leading-none sm:leading-normal">Bilder</span>
                   {photos.length > 0 && (
                     <span className="ml-1 bg-primary-500/20 text-primary-400 text-xs px-1.5 py-0.5 rounded">
                       {photos.length}
@@ -754,11 +764,11 @@ export default function Dashboard() {
 
                 <button
                   onClick={() => gpxInputRef.current?.click()}
-                  className="flex-1 btn-secondary text-xs sm:text-sm py-2.5 flex items-center justify-center gap-2"
+                  className="flex-1 btn-secondary text-xs sm:text-sm py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-14 sm:h-auto"
                   title="Last opp GPX-spor"
                 >
                   <Activity className="w-4 h-4" />
-                  <span className="hidden sm:inline">GPX</span>
+                  <span className="text-[10px] sm:text-sm leading-none sm:leading-normal">GPX</span>
                   {matchedTrack && (
                     <span className="ml-1 bg-emerald-500/20 text-emerald-400 text-xs px-1.5 py-0.5 rounded">
                       ✓
@@ -859,7 +869,11 @@ export default function Dashboard() {
                 </div>
               ) : (
                 filteredHunts.map((hunt: Hunt) => (
-                  <div
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
                     key={hunt.id}
                     onClick={() => navigate(`/hunt/${hunt.id}`)}
                     className="card hover:border-primary-500/30 hover:bg-zinc-900/80 transition-all cursor-pointer group"
@@ -878,7 +892,7 @@ export default function Dashboard() {
                         </div>
                         {hunt.photos && hunt.photos.length > 0 && (
                           <div className="bg-zinc-800/50 p-1.5 rounded-md">
-                            <Image className="w-4 h-4 text-zinc-400" />
+                            <ImageIcon className="w-4 h-4 text-zinc-400" />
                           </div>
                         )}
                       </div>
@@ -908,7 +922,7 @@ export default function Dashboard() {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))
               )}
             </div>
@@ -919,8 +933,10 @@ export default function Dashboard() {
         <div className="space-y-6">
 
           {/* Season Stats Card */}
-          <div className="card bg-gradient-to-br from-zinc-900 to-zinc-900/50 border-zinc-800">
-            <div className="p-5">
+          <TiltCard className="card bg-gradient-to-br from-zinc-900 to-zinc-900/50 border-zinc-800 overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="p-5 relative">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-zinc-100 flex items-center gap-2">
                   <Trophy className="w-4 h-4 text-amber-500" /> Sesong {selectedSeason}
@@ -931,26 +947,31 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="p-3 bg-zinc-800/30 rounded-lg">
+              <div className="grid grid-cols-3 gap-4 text-center mb-6">
+                <div className="p-3 bg-zinc-800/30 rounded-lg backdrop-blur-sm">
                   <div className="text-2xl font-bold text-white">{seasonStats.total_hunts}</div>
                   <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Turer</div>
                 </div>
-                <div className="p-3 bg-zinc-800/30 rounded-lg">
+                <div className="p-3 bg-zinc-800/30 rounded-lg backdrop-blur-sm">
                   <div className="text-2xl font-bold text-primary-400">{seasonStats.total_seen}</div>
                   <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Sett</div>
                 </div>
-                <div className="p-3 bg-zinc-800/30 rounded-lg">
+                <div className="p-3 bg-zinc-800/30 rounded-lg backdrop-blur-sm">
                   <div className="text-2xl font-bold text-emerald-400">{seasonStats.total_harvested}</div>
                   <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Felt</div>
                 </div>
+              </div>
+
+              <div className="border-t border-zinc-800/50 pt-4">
+                <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2 pl-1">Aktivitet</h4>
+                <SeasonStatsChart hunts={filteredHunts} season={selectedSeason} />
               </div>
 
               <button onClick={() => navigate('/statistics')} className="w-full mt-4 btn-outline text-xs py-2">
                 Se full statistikk
               </button>
             </div>
-          </div>
+          </TiltCard>
 
 
 
@@ -1070,6 +1091,6 @@ export default function Dashboard() {
         onClose={() => setShowGarminLogin(false)}
         onSuccess={() => handleGarminSync()}
       />
-    </div>
+    </motion.div >
   );
 }

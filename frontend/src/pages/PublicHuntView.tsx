@@ -21,124 +21,59 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import HuntMap from '../components/maps/HuntMap';
 import type { Hunt, Track } from '../types';
 
-// Mock-data for demo
-const mockSharedHunt: Hunt = {
-  id: '1',
-  user_id: 'user1',
-  title: 'Morgenjakt ved Storeberg',
-  date: '2024-11-10',
-  start_time: '07:00',
-  end_time: '11:30',
-  location: {
-    name: 'Storeberg',
-    region: 'Asker',
-    country: 'Norge',
-    coordinates: [59.89, 10.45],
-  },
-  weather: {
-    temperature: 5,
-    humidity: 80,
-    wind_speed: 2,
-    wind_direction: 'SV',
-    precipitation: 'none',
-    conditions: 'cloudy',
-  },
-  game_type: ['roe_deer', 'hare'],
-  game_seen: [
-    { type: 'roe_deer', count: 2, time: '08:30' },
-    { type: 'hare', count: 1, time: '09:15' },
-  ],
-  game_harvested: [],
-  dogs: ['rolex'],
-  tracks: [],
-  photos: [],
-  notes: 'Rolex jobbet utmerket i terrenget rundt vannet',
-  tags: ['morgenjakt', 'storeberg'],
-  is_favorite: false,
-  created_at: '2024-11-10T11:30:00Z',
-  updated_at: '2024-11-10T11:30:00Z',
-};
-
-const mockTracks: Track[] = [
-  {
-    id: 'track1',
-    hunt_id: '1',
-    dog_id: 'rolex',
-    name: 'Rolex - Storeberg',
-    source: 'garmin',
-    color: '#D4752E',
-    start_time: '07:00',
-    end_time: '11:30',
-    created_at: '2024-11-10T11:30:00Z',
-    geojson: {
-      type: 'LineString',
-      coordinates: [
-        [10.451, 59.891],
-        [10.453, 59.892],
-        [10.455, 59.893],
-        [10.454, 59.895],
-        [10.452, 59.894],
-        [10.45, 59.892],
-        [10.451, 59.891],
-      ],
-    },
-    statistics: {
-      distance_km: 8.3,
-      duration_minutes: 270,
-      avg_speed_kmh: 1.8,
-      max_speed_kmh: 12.5,
-      elevation_gain_m: 245,
-      elevation_loss_m: 180,
-      min_elevation_m: 150,
-      max_elevation_m: 395,
-      bounding_box: [[59.891, 10.45], [59.895, 10.455]],
-    },
-  },
-];
-
 export default function PublicHuntView() {
   const { shareId } = useParams<{ shareId: string }>();
   const [hunt, setHunt] = useState<Hunt | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
     const loadSharedHunt = async () => {
       setIsLoading(true);
       try {
-        // Simuler API-kall
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        // I produksjon ville dette hente data basert på shareId
-        if (shareId) {
-          // Sjekk om lenken er utløpt (60 minutter etter deling)
-          // I demo: bruk shareId for å simulere utløpstid
-          // Faktisk implementasjon: sjekk mot database timestamp
-          const mockShareTime = localStorage.getItem(`share_time_${shareId}`);
-          if (mockShareTime) {
-            const shareTimestamp = parseInt(mockShareTime, 10);
-            const now = Date.now();
-            const expirationTime = 60 * 60 * 1000; // 60 minutter
-            if (now - shareTimestamp > expirationTime) {
-              setIsExpired(true);
-              setIsLoading(false);
-              return;
-            }
-          } else {
-            // Første gang lenken åpnes - sett starttid
-            localStorage.setItem(`share_time_${shareId}`, Date.now().toString());
-          }
-
-          setHunt(mockSharedHunt);
-          setTracks(mockTracks);
-        } else {
+        if (!shareId) {
           setError('Ugyldig delingslenke');
+          setIsLoading(false);
+          return;
         }
-      } catch {
+
+        // Fetch the actual hunt from Firestore using shareId
+        const { doc, getDoc } = await import('firebase/firestore');
+        const { db } = await import('../lib/firebase');
+
+        // The shareId is the hunt ID
+        const huntRef = doc(db, 'hunts', shareId);
+        const huntSnap = await getDoc(huntRef);
+
+        if (!huntSnap.exists()) {
+          setError('Jakttur ikke funnet');
+          setIsLoading(false);
+          return;
+        }
+
+        const huntData = { id: huntSnap.id, ...huntSnap.data() } as Hunt;
+        setHunt(huntData);
+
+        // Fetch tracks if the hunt has any
+        if (huntData.tracks && huntData.tracks.length > 0) {
+          const { collection, query, where, getDocs } = await import('firebase/firestore');
+          const tracksRef = collection(db, 'tracks');
+          const q = query(tracksRef, where('hunt_id', '==', shareId));
+          const tracksSnap = await getDocs(q);
+
+          const tracksData = tracksSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Track[];
+
+          setTracks(tracksData);
+        }
+
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error loading shared hunt:', err);
         setError('Kunne ikke laste jakttur');
-      } finally {
         setIsLoading(false);
       }
     };
@@ -163,30 +98,7 @@ export default function PublicHuntView() {
     );
   }
 
-  if (isExpired) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <img
-            src="/logo.png"
-            alt="Jaktopplevelsen"
-            className="w-24 h-24 rounded-xl object-contain mx-auto mb-6"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-            }}
-          />
-          <h1 className="text-2xl font-bold text-text-primary mb-3">
-            Denne lenken har utløpt
-          </h1>
-          <p className="text-text-muted text-sm">
-            Delingslenker utløper etter 60 minutter av sikkerhetsgrunner.
-            Be eieren om å dele en ny lenke.
-          </p>
-        </div>
-      </div>
-    );
-  }
+
 
   if (error || !hunt) {
     return (
@@ -311,21 +223,17 @@ export default function PublicHuntView() {
           <div className="card p-4">
             <div className="flex items-center gap-3 mb-3">
               {(() => {
-                switch (hunt.weather.conditions) {
-                  case 'clear':
-                    return <Sun className="w-6 h-6 text-yellow-400" />;
-                  case 'rain':
-                  case 'light_rain':
-                  case 'heavy_rain':
-                    return <CloudRain className="w-6 h-6 text-blue-400" />;
-                  case 'snow':
-                  case 'light_snow':
-                  case 'heavy_snow':
-                    return <CloudSnow className="w-6 h-6 text-blue-200" />;
-                  case 'fog':
-                    return <CloudFog className="w-6 h-6 text-gray-400" />;
-                  default:
-                    return <Cloud className="w-6 h-6 text-gray-400" />;
+                const condition = hunt.weather.conditions;
+                if (condition === 'clear') {
+                  return <Sun className="w-6 h-6 text-yellow-400" />;
+                } else if (condition.includes('rain')) {
+                  return <CloudRain className="w-6 h-6 text-blue-400" />;
+                } else if (condition.includes('snow')) {
+                  return <CloudSnow className="w-6 h-6 text-blue-200" />;
+                } else if (condition === 'fog') {
+                  return <CloudFog className="w-6 h-6 text-gray-400" />;
+                } else {
+                  return <Cloud className="w-6 h-6 text-gray-400" />;
                 }
               })()}
               <div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, X, MapPin, Dog, Calendar, Eye, Target } from 'lucide-react';
+import { Search, X, MapPin, Dog, Calendar, Target } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAppStore } from '../../store/useAppStore';
 import { format } from 'date-fns';
@@ -96,7 +96,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
         id: `dog-${dog.id}`,
         type: 'dog',
         title: dog.name,
-        subtitle: `${dog.breed} • ${dog.is_active ? 'Aktiv' : 'Inaktiv'}${dog.garmin_collar_id ? ` • Garmin: ${dog.garmin_collar_id}` : ''}`,
+        subtitle: `${dog.breed} • ${dog.is_active ? 'Aktiv' : 'Inaktiv'}`,
         icon: Dog,
         route: '/dogs',
       });
@@ -134,7 +134,6 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     ];
 
     gameTypes.forEach((game) => {
-      const huntsWithGame = mockHunts.filter((h) => h.gameSeen > 0 || h.gameHarvested > 0);
       items.push({
         id: `game-${game.id}`,
         type: 'game',

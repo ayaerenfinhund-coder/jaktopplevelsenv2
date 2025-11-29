@@ -51,9 +51,7 @@ function App() {
           <Route path="/share/:shareId" element={<PublicHuntView />} />
           <Route
             path="/"
-            element={
-              user ? <Layout /> : <Navigate to="/login" replace />
-            }
+            element={<Layout />}
           >
             <Route index element={<Dashboard />} />
             <Route path="hunt/new" element={<NewHunt />} />

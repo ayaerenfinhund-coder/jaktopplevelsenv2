@@ -35,7 +35,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 h-14 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800 z-40">
+      <nav className="fixed top-0 left-0 right-0 h-14 bg-zinc-900/60 backdrop-blur-xl border-b border-zinc-800/50 z-40 supports-[backdrop-filter]:bg-zinc-900/60">
         <div className="flex items-center justify-between h-full px-4 sm:px-6 lg:px-8">
           {/* Left section */}
           <div className="flex items-center gap-4">
@@ -82,10 +82,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           <div className="hidden md:flex flex-1 max-w-xl mx-8">
             <button
               onClick={() => setSearchOpen(true)}
-              className="w-full flex items-center gap-3 px-4 py-2.5 bg-background border border-background-lighter rounded-lg text-text-muted hover:border-primary-700/50 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-2.5 bg-zinc-900/50 border border-zinc-800/50 rounded-lg text-text-muted hover:border-primary-700/50 hover:bg-zinc-900/80 transition-all duration-200 group"
             >
-              <Search className="w-5 h-5" />
-              <span>Søk etter jaktturer, hunder, steder...</span>
+              <Search className="w-5 h-5 group-hover:text-primary-500 transition-colors" />
+              <span className="group-hover:text-zinc-300 transition-colors">Søk etter jaktturer, hunder, steder...</span>
             </button>
           </div>
 

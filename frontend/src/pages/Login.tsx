@@ -27,19 +27,8 @@ export default function Login() {
     }
   };
 
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const handleMouseMove = (event: MouseEvent) => {
-      setMousePosition({ x: event.clientX, y: event.clientY });
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
   return (
-    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-4 relative overflow-hidden selection:bg-primary-500/30 cursor-crosshair">
+    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-4 relative overflow-hidden selection:bg-primary-500/30">
 
       {/* Tactical Dot Pattern */}
       <div
@@ -52,31 +41,6 @@ export default function Login() {
 
       {/* Ambient Forest Glow (Bottom) */}
       <div className="absolute bottom-0 left-0 right-0 h-[500px] bg-gradient-to-t from-primary-900/10 to-transparent pointer-events-none z-0" />
-
-      {/* Interactive Scope Lines */}
-      <div
-        className="pointer-events-none fixed inset-0 z-10"
-      >
-        {/* Horizontal Line */}
-        <div
-          className="absolute h-[1px] w-full bg-gradient-to-r from-transparent via-primary-500/20 to-transparent transition-transform duration-75 ease-out"
-          style={{ top: mousePosition.y }}
-        />
-        {/* Vertical Line */}
-        <div
-          className="absolute w-[1px] h-full bg-gradient-to-b from-transparent via-primary-500/20 to-transparent transition-transform duration-75 ease-out"
-          style={{ left: mousePosition.x }}
-        />
-        {/* Subtle Spotlight */}
-        <div
-          className="absolute -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full transition-transform duration-100 ease-out"
-          style={{
-            left: mousePosition.x,
-            top: mousePosition.y,
-            background: 'radial-gradient(circle, rgba(34, 197, 94, 0.05) 0%, transparent 70%)'
-          }}
-        />
-      </div>
 
       <div className="w-full max-w-[400px] bg-zinc-900/40 border border-white/5 rounded-2xl p-8 shadow-2xl backdrop-blur-md relative z-20">
         {/* Logo & Title */}

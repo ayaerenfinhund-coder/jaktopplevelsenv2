@@ -26,7 +26,14 @@ import * as toGeoJSON from '@tmcw/togeojson';
 class ApiClient {
     private getUserId(): string {
         const user = auth.currentUser;
-        if (!user) throw new Error('Not authenticated');
+        if (!user) {
+            console.error('Authentication error: No current user found');
+            console.error('Auth state:', {
+                currentUser: auth.currentUser,
+                authInitialized: !!auth
+            });
+            throw new Error('Du er ikke innlogget. Vennligst logg inn på nytt.');
+        }
         return user.uid;
     }
 

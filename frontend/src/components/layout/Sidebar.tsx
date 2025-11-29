@@ -10,6 +10,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useAppStore } from '../../store/useAppStore';
 import { apiClient } from '../../services/apiClient';
@@ -103,7 +104,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={clsx(
-          'fixed top-0 left-0 bottom-0 w-64 bg-zinc-900 border-r border-zinc-800 z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:top-14 lg:z-30',
+          'fixed top-0 left-0 bottom-0 w-64 bg-zinc-900/95 backdrop-blur-xl border-r border-zinc-800/50 z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:top-14 lg:z-30',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -142,7 +143,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <NavLink
                     to={item.href}
                     onClick={() => {
-                      // Clear quick filter when navigating away from dashboard
                       if (item.href !== '/' && quickFilterActive !== 'none') {
                         setQuickFilter('none');
                       }
@@ -150,15 +150,25 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     }}
                     className={({ isActive }) =>
                       clsx(
-                        'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
-                        isActive
-                          ? 'bg-primary-500/10 text-primary-400 border border-primary-500/20'
-                          : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100'
+                        'relative flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group',
+                        isActive ? 'text-primary-400' : 'text-zinc-400 hover:text-zinc-100'
                       )
                     }
                   >
-                    <item.icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium">{item.name}</span>
+                    {({ isActive }) => (
+                      <>
+                        {isActive && (
+                          <motion.div
+                            layoutId="active-nav"
+                            className="absolute inset-0 bg-primary-500/10 border border-primary-500/20 rounded-lg"
+                            initial={false}
+                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                          />
+                        )}
+                        <item.icon className="w-5 h-5 flex-shrink-0 relative z-10" />
+                        <span className="font-medium relative z-10">{item.name}</span>
+                      </>
+                    )}
                   </NavLink>
                 </li>
               ))}
