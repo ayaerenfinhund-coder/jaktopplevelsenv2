@@ -34,6 +34,7 @@ import toast from 'react-hot-toast';
 import { apiClient } from '../services/apiClient';
 import { useAppStore } from '../store/useAppStore';
 import { useAuth } from '../hooks/useAuth';
+import HuntMap from '../components/maps/HuntMap';
 import type { Hunt } from '../types';
 
 // Game types
@@ -801,14 +802,36 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {/* Track Confirmation */}
+              {/* Track Confirmation & Map Preview */}
               {showTrackConfirm && matchedTrack && (
-                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2 text-emerald-400">
-                    <CheckCircle className="w-4 h-4" />
-                    <span>Spor lagt til: {matchedTrack.distance_km} km</span>
+                <div className="space-y-3">
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-emerald-400">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Spor lagt til: {matchedTrack.distance_km} km</span>
+                    </div>
+                    <button onClick={() => { setMatchedTrack(null); setShowTrackConfirm(false); }} className="text-zinc-500 hover:text-zinc-300">✕</button>
                   </div>
-                  <button onClick={() => { setMatchedTrack(null); setShowTrackConfirm(false); }} className="text-zinc-500 hover:text-zinc-300">✕</button>
+
+                  {/* Map Preview */}
+                  <div className="h-[300px] rounded-lg overflow-hidden border border-zinc-800">
+                    <HuntMap
+                      tracks={[{
+                        id: matchedTrack.id,
+                        hunt_id: 'preview',
+                        name: matchedTrack.name || 'Importert spor',
+                        source: 'gpx_import',
+                        geojson: matchedTrack.geojson,
+                        statistics: matchedTrack.statistics,
+                        color: '#D4752E', // Default orange color
+                        start_time: matchedTrack.start_time,
+                        end_time: matchedTrack.end_time,
+                        created_at: new Date().toISOString()
+                      }]}
+                      initialHeight="small"
+                      showControls={true}
+                    />
+                  </div>
                 </div>
               )}
             </div>
