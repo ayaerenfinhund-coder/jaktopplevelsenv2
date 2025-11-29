@@ -52,6 +52,10 @@ export default function HuntDetail() {
   const [editEndTime, setEditEndTime] = useState('');
   const [editLocation, setEditLocation] = useState('');
 
+  // State for loaded tracks
+  const [loadedTracks, setLoadedTracks] = useState<any[]>([]);
+  const [loadingTracks, setLoadingTracks] = useState(false);
+
   // Initialize edit state when hunt loads
   useEffect(() => {
     if (hunt) {
@@ -63,6 +67,48 @@ export default function HuntDetail() {
       setEditLocation(hunt.location?.name || '');
     }
   }, [hunt]);
+
+  // Fetch tracks if hunt has track IDs
+  useEffect(() => {
+    const fetchTracks = async () => {
+      if (!hunt || !hunt.tracks || hunt.tracks.length === 0) {
+        setLoadedTracks([]);
+        return;
+      }
+
+      // Check if tracks are already objects with geojson
+      const firstTrack = hunt.tracks[0];
+      if (typeof firstTrack === 'object' && firstTrack.geojson) {
+        setLoadedTracks(hunt.tracks);
+        return;
+      }
+
+      // Tracks are IDs, fetch from Firestore
+      setLoadingTracks(true);
+      try {
+        const { collection, query, where, getDocs } = await import('firebase/firestore');
+        const { db } = await import('../lib/firebase');
+
+        const tracksRef = collection(db, 'tracks');
+        const q = query(tracksRef, where('hunt_id', '==', id));
+        const tracksSnap = await getDocs(q);
+
+        const tracksData = tracksSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        setLoadedTracks(tracksData);
+      } catch (error) {
+        console.error('Error fetching tracks:', error);
+        setLoadedTracks([]);
+      } finally {
+        setLoadingTracks(false);
+      }
+    };
+
+    fetchTracks();
+  }, [hunt, id]);
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -218,7 +264,7 @@ export default function HuntDetail() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || loadingTracks) {
     return (
       <div className="flex justify-center py-12">
         <LoadingSpinner size="lg" />
@@ -246,11 +292,8 @@ export default function HuntDetail() {
   const totalGameSeen = (hunt.game_seen || []).reduce((sum: number, obs: any) => sum + (obs.count || 0), 0);
   const totalHarvested = (hunt.game_harvested || []).reduce((sum: number, g: any) => sum + (g.count || 0), 0);
 
-  // Tracks handling - assuming tracks might be objects or IDs
-  // Ideally we should fetch tracks if they are IDs, but for now we handle what we have
-  const tracks = Array.isArray(hunt.tracks) ? hunt.tracks : [];
-  // Filter out ID-only tracks if we can't display them (temporary fix)
-  const displayTracks = tracks.filter((t: any) => typeof t === 'object' && t.geojson);
+  // Use loaded tracks
+  const displayTracks = loadedTracks.filter((t: any) => t.geojson);
 
   return (
     <div className="space-y-5 max-w-5xl mx-auto pb-8">
