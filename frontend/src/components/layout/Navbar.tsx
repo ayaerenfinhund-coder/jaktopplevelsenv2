@@ -6,7 +6,7 @@ import {
   LogOut,
   Settings,
 } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import SearchModal from '../common/SearchModal';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../hooks/useAuth';
@@ -19,34 +19,8 @@ interface NavbarProps {
 export default function Navbar({ onMenuClick }: NavbarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  // Close user menu on click outside or escape key
-  useEffect(() => {
-    if (!showUserMenu) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setShowUserMenu(false);
-      }
-    };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setShowUserMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [showUserMenu]);
 
   const handleLogout = async () => {
     try {
@@ -126,7 +100,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             </button>
 
             {/* User menu */}
-            <div className="relative" ref={userMenuRef}>
+            <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className={`btn-ghost btn-icon ${user?.photoURL ? 'p-0 rounded-full overflow-hidden w-9 h-9' : ''}`}
@@ -145,32 +119,40 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
               {/* Dropdown menu */}
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl z-50 overflow-hidden animate-slide-down">
-                  {user?.email && (
-                    <div className="px-4 py-3 border-b border-zinc-800">
-                      <p className="text-sm text-zinc-400">Logget inn som</p>
-                      <p className="text-sm font-medium truncate">{user.email}</p>
-                    </div>
-                  )}
-                  <Link
-                    to="/settings"
+                <>
+                  {/* Invisible overlay to catch clicks outside */}
+                  <div
+                    className="fixed inset-0 z-40"
                     onClick={() => setShowUserMenu(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-zinc-800 transition-colors"
-                  >
-                    <Settings className="w-4 h-4" />
-                    Innstillinger
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      handleLogout();
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-zinc-800 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logg ut
-                  </button>
-                </div>
+                  />
+
+                  <div className="absolute right-0 mt-2 w-56 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl z-50 overflow-hidden animate-slide-down">
+                    {user?.email && (
+                      <div className="px-4 py-3 border-b border-zinc-800">
+                        <p className="text-sm text-zinc-400">Logget inn som</p>
+                        <p className="text-sm font-medium truncate">{user.email}</p>
+                      </div>
+                    )}
+                    <Link
+                      to="/settings"
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-zinc-800 transition-colors"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Innstillinger
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        handleLogout();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-zinc-800 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logg ut
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
