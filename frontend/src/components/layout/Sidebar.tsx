@@ -136,7 +136,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </button>
         </div>
 
-        <div className="flex flex-col h-[calc(100%-60px)] lg:h-full overflow-y-auto">
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-y-auto">
           {/* New Hunt CTA */}
           <div className="p-3">
             <button
@@ -243,56 +244,53 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </li>
             </ul>
           </div>
+        </div>
 
-          {/* Spacer to push bottom section down */}
-          <div className="flex-1" />
-
-          {/* Bottom section - always visible, no scrolling needed */}
-          <div className="border-t border-zinc-800 bg-zinc-900/98">
-            {/* Statistics - compact */}
-            <div className="p-3">
-              <div className="px-3 flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-text-muted">Aktive hunder</div>
-                  <div className="text-lg font-semibold text-primary-400">
-                    {activeDogs}
-                  </div>
+        {/* Bottom section - FIXED at bottom, always visible */}
+        <div className="border-t border-zinc-800 bg-zinc-900">
+          {/* Statistics - compact */}
+          <div className="p-3">
+            <div className="px-3 flex items-center justify-between">
+              <div>
+                <div className="text-xs text-text-muted">Aktive hunder</div>
+                <div className="text-lg font-semibold text-primary-400">
+                  {activeDogs}
                 </div>
-                <button
-                  onClick={() => {
-                    navigate('/statistics');
-                    onClose();
-                  }}
-                  className="text-xs text-primary-400 hover:text-primary-300 transition-colors px-2 py-1 hover:bg-primary-500/10 rounded"
-                >
-                  Stats →
-                </button>
               </div>
-            </div>
-
-            {/* PWA Install Button - More visible */}
-            {isInstallable && !isInstalled && (
-              <div className="p-3 border-t border-zinc-800">
-                <button
-                  onClick={handleInstallApp}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 rounded-lg transition-all shadow-lg shadow-primary-900/20 hover:shadow-primary-900/40"
-                >
-                  <Smartphone className="w-4 h-4" />
-                  <span>Installer som app</span>
-                </button>
-              </div>
-            )}
-
-            {/* Export button */}
-            <div className="p-3 border-t border-zinc-800">
               <button
-                onClick={handleExport}
-                className="w-full btn-outline btn-sm"
+                onClick={() => {
+                  navigate('/statistics');
+                  onClose();
+                }}
+                className="text-xs text-primary-400 hover:text-primary-300 transition-colors px-2 py-1 hover:bg-primary-500/10 rounded"
               >
-                <Download className="w-4 h-4 mr-2" />
-                Eksporter data
+                Stats →
               </button>
             </div>
+          </div>
+
+          {/* PWA Install Button - More visible */}
+          {isInstallable && !isInstalled && (
+            <div className="p-3 border-t border-zinc-800">
+              <button
+                onClick={handleInstallApp}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 rounded-lg transition-all shadow-lg shadow-primary-900/20 hover:shadow-primary-900/40"
+              >
+                <Smartphone className="w-4 h-4" />
+                <span>Installer som app</span>
+              </button>
+            </div>
+          )}
+
+          {/* Export button */}
+          <div className="p-3 border-t border-zinc-800">
+            <button
+              onClick={handleExport}
+              className="w-full btn-outline btn-sm"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Eksporter data
+            </button>
           </div>
         </div>
       </aside>
