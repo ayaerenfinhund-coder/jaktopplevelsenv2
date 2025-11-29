@@ -190,10 +190,13 @@ class ApiClient {
                     // Try to extract start time from GPX
                     let startTime = new Date().toISOString();
 
-                    if (trackFeature.properties?.coordTimes?.[0]) {
-                        startTime = trackFeature.properties.coordTimes[0];
-                    } else if (trackFeature.properties?.time) {
-                        startTime = trackFeature.properties.time;
+                    // Safe access to properties
+                    const properties = trackFeature.properties || {};
+
+                    if (properties.coordTimes?.[0]) {
+                        startTime = properties.coordTimes[0];
+                    } else if (properties.time) {
+                        startTime = properties.time;
                     } else {
                         // Fallback: check metadata time
                         const metadataTime = gpx.querySelector('metadata > time')?.textContent;
@@ -211,6 +214,7 @@ class ApiClient {
                         source: 'manual_upload'
                     });
                 } catch (error) {
+                    console.error('GPX upload failed:', error);
                     reject(error);
                 }
             };
