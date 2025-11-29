@@ -9,14 +9,22 @@ service firebase.storage {
               request.auth.token.email == 'w.geicke@gmail.com');
     }
     
-    // Default deny all
+    // Default deny all - security first!
     match /{allPaths=**} {
       allow read, write: if false;
     }
     
-    // User uploads - only whitelisted users can upload/read
+    // User uploads - structure: users/{userId}/hunts/{huntId}/{filename}
+    // Only whitelisted users can upload/read their own files
+    match /users/{userId}/hunts/{huntId}/{filename} {
+      allow read: if isWhitelisted() && request.auth.uid == userId;
+      allow write: if isWhitelisted() && request.auth.uid == userId;
+      allow delete: if isWhitelisted() && request.auth.uid == userId;
+    }
+    
+    // Allow reading any user's files for whitelisted users (for viewing shared hunts)
     match /users/{userId}/{allPaths=**} {
-      allow read, write: if isWhitelisted();
+      allow read: if isWhitelisted();
     }
   }
 }

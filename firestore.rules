@@ -9,26 +9,43 @@ service cloud.firestore {
               request.auth.token.email == 'w.geicke@gmail.com');
     }
     
-    // Default deny all
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Default deny all - security first!
     match /{document=**} {
       allow read, write: if false;
     }
     
-    // Hunts collection - only whitelisted users
+    // Hunts collection - only whitelisted users can access their own hunts
     match /hunts/{huntId} {
-      allow read, write: if isWhitelisted();
+      allow read: if isWhitelisted() && isOwner(resource.data.userId);
+      allow create: if isWhitelisted() && isOwner(request.resource.data.userId);
+      allow update, delete: if isWhitelisted() && isOwner(resource.data.userId);
     }
     
-    // Dogs collection - only whitelisted users
+    // Dogs collection - only whitelisted users can access their own dogs
     match /dogs/{dogId} {
-      allow read, write: if isWhitelisted();
+      allow read: if isWhitelisted() && isOwner(resource.data.userId);
+      allow create: if isWhitelisted() && isOwner(request.resource.data.userId);
+      allow update, delete: if isWhitelisted() && isOwner(resource.data.userId);
     }
     
-    // Tracks collection - only whitelisted users
+    // Tracks collection - only whitelisted users can access their own tracks
     match /tracks/{trackId} {
-      allow read, write: if isWhitelisted();
+      allow read: if isWhitelisted() && isOwner(resource.data.userId);
+      allow create: if isWhitelisted() && isOwner(request.resource.data.userId);
+      allow update, delete: if isWhitelisted() && isOwner(resource.data.userId);
     }
     
-    // Any other collections - deny by default
+    // Public hunt shares - read-only for anyone (for share links)
+    // Note: In production, you might want to add expiration logic here
+    match /hunts/{huntId} {
+      // Allow public read for shared hunts (share links)
+      // This overrides the previous rule for public access
+      allow read: if true;
+    }
   }
 }

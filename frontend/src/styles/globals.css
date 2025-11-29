@@ -9,6 +9,14 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     color-scheme: dark;
+
+    /* Smooth scrolling for all devices */
+    scroll-behavior: smooth;
+
+    /* Mobile scroll optimization */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
+    /* Prevent pull-to-refresh bounce */
   }
 
   /* Dark mode date picker icons */
@@ -33,7 +41,17 @@
       radial-gradient(at 0% 100%, rgba(249, 115, 22, 0.08) 0px, transparent 50%);
     background-attachment: fixed;
     background-size: 100% 100%;
-    cursor: auto; /* Disable any custom cursor effects */
+    cursor: auto;
+    /* Disable any custom cursor effects */
+
+    /* Mobile scroll optimization */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
+
+    /* Hardware acceleration for smooth scrolling */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: scroll-position;
   }
 
   /* Vercel-style scrollbar */
