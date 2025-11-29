@@ -914,7 +914,7 @@ export default function Dashboard() {
                               )}
                               {hunt.game_harvested.length > 0 && (
                                 <span className="text-emerald-400 font-medium">
-                                  {hunt.game_harvested.reduce((a, g) => a + g.count, 0)} felt
+                                  {hunt.game_harvested.reduce((a, g) => a + g.count, 0)} Skutt
                                 </span>
                               )}
                             </div>
@@ -958,7 +958,7 @@ export default function Dashboard() {
                 </div>
                 <div className="p-3 bg-zinc-800/30 rounded-lg backdrop-blur-sm">
                   <div className="text-2xl font-bold text-emerald-400">{seasonStats.total_harvested}</div>
-                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Felt</div>
+                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Skutt</div>
                 </div>
               </div>
 
@@ -982,7 +982,7 @@ export default function Dashboard() {
       <Modal
         isOpen={showGameModal}
         onClose={() => setShowGameModal(false)}
-        title="Vilt observert og felt"
+        title="Vilt observert og Skutt"
         size="lg"
       >
         <div className="space-y-6">
@@ -1027,7 +1027,7 @@ export default function Dashboard() {
 
                       {/* Harvested */}
                       <div className="bg-zinc-950 rounded-lg p-2 flex items-center justify-between border border-zinc-800">
-                        <span className="text-xs font-medium text-zinc-400">Felt</span>
+                        <span className="text-xs font-medium text-zinc-400">Skutt</span>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => updateGameCount(setGameHarvested, game.id, -1)}

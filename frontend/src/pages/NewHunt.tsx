@@ -562,12 +562,12 @@ export default function NewHunt() {
         >
           <div className="flex items-center gap-3">
             <Target className="w-5 h-5 text-text-muted" />
-            <span className="text-sm font-medium text-text-primary">Vilt observert/felt</span>
+            <span className="text-sm font-medium text-text-primary">Vilt observert/Skutt</span>
           </div>
           <div className="flex items-center gap-2">
             {(totalSeen > 0 || totalHarvested > 0) ? (
               <span className="text-sm text-primary-400 font-medium">
-                {totalSeen} sett, {totalHarvested} felt
+                {totalSeen} sett, {totalHarvested} Skutt
               </span>
             ) : (
               <span className="text-sm text-text-muted">Legg til</span>
@@ -669,7 +669,7 @@ export default function NewHunt() {
       <Modal
         isOpen={showGameModal}
         onClose={() => setShowGameModal(false)}
-        title="Vilt observert og felt"
+        title="Vilt observert og Skutt"
         size="lg"
       >
         <div className="space-y-6">
@@ -714,7 +714,7 @@ export default function NewHunt() {
 
                       {/* Harvested */}
                       <div className="bg-background-lighter rounded-lg p-2 flex items-center justify-between">
-                        <span className="text-sm font-medium text-text-secondary">Felt</span>
+                        <span className="text-sm font-medium text-text-secondary">Skutt</span>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => updateGameCount(setGameHarvested, game.id, -1)}

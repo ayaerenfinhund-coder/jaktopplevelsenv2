@@ -223,7 +223,7 @@ export default function Statistics() {
                                 <div className="p-2 bg-accent-500/10 rounded-lg">
                                     <Target className="w-5 h-5 text-accent-400" />
                                 </div>
-                                <span className="text-sm text-zinc-400">Felt</span>
+                                <span className="text-sm text-zinc-400">Skutt</span>
                             </div>
                             <p className="text-3xl font-bold">{stats.totalGameHarvested}</p>
                         </div>
@@ -282,7 +282,7 @@ export default function Statistics() {
                                                     )}
                                                     {hunt.game_harvested?.length > 0 && (
                                                         <span className="text-primary-400 font-medium">
-                                                            {hunt.game_harvested.reduce((acc: number, curr: any) => acc + curr.count, 0)} felt
+                                                            {hunt.game_harvested.reduce((acc: number, curr: any) => acc + curr.count, 0)} Skutt
                                                         </span>
                                                     )}
                                                 </div>
@@ -358,7 +358,7 @@ export default function Statistics() {
                                                     Sett: <span className="text-zinc-100 font-medium">{counts.seen}</span>
                                                 </span>
                                                 <span className="text-zinc-400">
-                                                    Felt: <span className="text-primary-400 font-medium">{counts.harvested}</span>
+                                                    Skutt: <span className="text-primary-400 font-medium">{counts.harvested}</span>
                                                 </span>
                                             </div>
                                         </div>

@@ -185,7 +185,7 @@ export default function HuntDetail() {
   };
 
   const weatherLabels: Record<string, string> = {
-    clear: 'Klart vær',
+    clear: 'Klarvær',
     cloudy: 'Lettskyet',
     overcast: 'Overskyet',
     rain: 'Regn',
@@ -370,7 +370,7 @@ export default function HuntDetail() {
         )}
       </div>
 
-      {/* 3. Statistikk - observert/felt/distanse/varighet */}
+      {/* 3. Statistikk - observert/Skutt/distanse/varighet */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-background-light rounded-xl p-4 text-center">
           <Eye className="w-6 h-6 text-primary-400 mx-auto mb-2" />
@@ -380,7 +380,7 @@ export default function HuntDetail() {
         <div className="bg-background-light rounded-xl p-4 text-center">
           <Target className="w-6 h-6 text-success mx-auto mb-2" />
           <p className="text-2xl font-bold text-text-primary">{totalHarvested}</p>
-          <p className="text-sm text-text-muted">Felt</p>
+          <p className="text-sm text-text-muted">Skutt</p>
         </div>
         {displayTracks[0] && displayTracks[0].statistics && (
           <>
@@ -483,7 +483,7 @@ export default function HuntDetail() {
             )}
             {hunt.game_harvested && hunt.game_harvested.length > 0 && (
               <div>
-                <p className="text-xs text-text-muted mb-2">Felt</p>
+                <p className="text-xs text-text-muted mb-2">Skutt</p>
                 <div className="space-y-2">
                   {hunt.game_harvested.map((game: any, i: number) => (
                     <div key={i} className="flex justify-between items-center">

@@ -78,7 +78,7 @@ const HuntRow = memo(({ index, style, data }: HuntRowProps) => {
                         )}
                         {totalHarvested > 0 && (
                             <div className="flex flex-col items-end">
-                                <span className="text-xs text-zinc-400">Felt</span>
+                                <span className="text-xs text-zinc-400">Skutt</span>
                                 <span className="text-sm font-medium text-primary-400">{totalHarvested}</span>
                             </div>
                         )}
