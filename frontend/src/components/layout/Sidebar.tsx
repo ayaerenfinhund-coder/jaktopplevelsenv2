@@ -8,12 +8,14 @@ import {
   X,
   Camera,
   Plus,
+  Smartphone,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useAppStore } from '../../store/useAppStore';
 import { apiClient } from '../../services/apiClient';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -29,6 +31,7 @@ const navigation = [
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const { dogs, quickFilterActive, setQuickFilter } = useAppStore();
+  const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
 
   // Calculate actual stats from store
   const activeDogs = dogs.filter(d => d.is_active).length;
@@ -83,6 +86,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Kunne ikke eksportere data', { id: 'export' });
+    }
+  };
+
+  const handleInstallApp = async () => {
+    const success = await promptInstall();
+    if (success) {
+      toast.success('App installert! 🎉');
     }
   };
 
@@ -252,8 +262,24 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </div>
 
+          {/* PWA Install Button - Subtle at bottom */}
+          {isInstallable && !isInstalled && (
+            <div className="p-3 border-t border-zinc-800 mt-auto">
+              <button
+                onClick={handleInstallApp}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-400 hover:text-primary-400 hover:bg-zinc-800/50 rounded-lg transition-colors"
+              >
+                <Smartphone className="w-4 h-4" />
+                <span>Installer som app</span>
+              </button>
+            </div>
+          )}
+
           {/* Export button */}
-          <div className="p-3 border-t border-zinc-800 mt-auto">
+          <div className={clsx(
+            'p-3 border-t border-zinc-800',
+            !isInstallable && 'mt-auto'
+          )}>
             <button
               onClick={handleExport}
               className="w-full btn-outline btn-sm"

@@ -1,18 +1,56 @@
 {
   "name": "Jaktopplevelsen",
-  "short_name": "Jaktlogg",
-  "description": "Din digitale jaktdagbok med GPS-sporing",
+  "short_name": "Jaktopplevelsen",
+  "description": "Din digitale jaktdagbok - logg jaktturer, spor hunder, og analyser statistikk",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#D4752E",
-  "orientation": "portrait",
+  "background_color": "#09090b",
+  "theme_color": "#1d6c45",
+  "orientation": "portrait-primary",
   "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
     {
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": [
+    "lifestyle",
+    "sports"
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Ny jakttur",
+      "short_name": "Ny tur",
+      "description": "Registrer en ny jakttur",
+      "url": "/hunt/new",
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Statistikk",
+      "short_name": "Stats",
+      "description": "Se jaktstatistikk",
+      "url": "/statistics",
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
 }

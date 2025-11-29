@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, TrendingUp, Calendar, MapPin, Target, Eye, Award, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDogs, useHunts } from '../hooks/useApi';
@@ -11,16 +11,6 @@ export default function Statistics() {
     const [selectedDog, setSelectedDog] = useState<string>('all');
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
     const [showAllHunts, setShowAllHunts] = useState(false);
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
-    useEffect(() => {
-        const handleMouseMove = (event: MouseEvent) => {
-            setMousePosition({ x: event.clientX, y: event.clientY });
-        };
-
-        window.addEventListener('mousemove', handleMouseMove);
-        return () => window.removeEventListener('mousemove', handleMouseMove);
-    }, []);
 
     // Filter hunts by year
     const filteredHunts = hunts.filter((hunt: any) => {
@@ -133,277 +123,252 @@ export default function Statistics() {
     }
 
     return (
-        <>
-            {/* Interactive Scope Lines - Statistics Page Only */}
-            <div className="pointer-events-none fixed inset-0 z-10">
-                {/* Horizontal Line */}
-                <div
-                    className="absolute h-[1px] w-full bg-gradient-to-r from-transparent via-primary-500/20 to-transparent transition-transform duration-75 ease-out"
-                    style={{ top: mousePosition.y }}
-                />
-                {/* Vertical Line */}
-                <div
-                    className="absolute w-[1px] h-full bg-gradient-to-b from-transparent via-primary-500/20 to-transparent transition-transform duration-75 ease-out"
-                    style={{ left: mousePosition.x }}
-                />
-                {/* Subtle Spotlight */}
-                <div
-                    className="absolute -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full transition-transform duration-100 ease-out"
-                    style={{
-                        left: mousePosition.x,
-                        top: mousePosition.y,
-                        background: 'radial-gradient(circle, rgba(34, 197, 94, 0.05) 0%, transparent 70%)'
-                    }}
-                />
-            </div>
-
-            <div className="space-y-6">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => navigate('/')}
-                            className="btn-ghost btn-icon"
-                            aria-label="Tilbake til oversikt"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </button>
-                        <div>
-                            <h1 className="text-3xl font-bold">Statistikk</h1>
-                            <p className="text-zinc-400 mt-1">Oversikt over dine jaktturer</p>
-                        </div>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="btn-ghost btn-icon"
+                        aria-label="Tilbake til oversikt"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div>
+                        <h1 className="text-3xl font-bold">Statistikk</h1>
+                        <p className="text-zinc-400 mt-1">Oversikt over dine jaktturer</p>
                     </div>
                 </div>
+            </div>
 
-                {/* Filters */}
-                <div className="card p-4">
-                    <div className="flex flex-wrap gap-4">
-                        {/* Year selector */}
+            {/* Filters */}
+            <div className="card p-4">
+                <div className="flex flex-wrap gap-4">
+                    {/* Year selector */}
+                    <div className="flex-1 min-w-[200px]">
+                        <label className="input-label">Sesong</label>
+                        <select
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(Number(e.target.value))}
+                            className="select"
+                        >
+                            {availableYears.map(year => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Dog selector */}
+                    {activeDogs.length > 0 && (
                         <div className="flex-1 min-w-[200px]">
-                            <label className="input-label">Sesong</label>
+                            <label className="input-label">Hund</label>
                             <select
-                                value={selectedYear}
-                                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                                value={selectedDog}
+                                onChange={(e) => setSelectedDog(e.target.value)}
                                 className="select"
                             >
-                                {availableYears.map(year => (
-                                    <option key={year} value={year}>{year}</option>
+                                <option value="all">Alle hunder</option>
+                                {activeDogs.map(dog => (
+                                    <option key={dog.id} value={dog.id}>{dog.name}</option>
                                 ))}
                             </select>
                         </div>
+                    )}
+                </div>
+            </div>
 
-                        {/* Dog selector */}
-                        {activeDogs.length > 0 && (
-                            <div className="flex-1 min-w-[200px]">
-                                <label className="input-label">Hund</label>
-                                <select
-                                    value={selectedDog}
-                                    onChange={(e) => setSelectedDog(e.target.value)}
-                                    className="select"
+            {/* Empty state */}
+            {filteredHunts.length === 0 ? (
+                <div className="card p-12 text-center">
+                    <BarChart3 className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
+                    <h3 className="text-xl font-semibold mb-2">Ingen data for {selectedYear}</h3>
+                    <p className="text-zinc-400 mb-6">
+                        {selectedDog !== 'all'
+                            ? 'Denne hunden har ingen registrerte turer dette året.'
+                            : 'Du har ingen registrerte jaktturer dette året.'}
+                    </p>
+                    <button
+                        onClick={() => navigate('/')}
+                        className="btn-primary"
+                    >
+                        Registrer jakttur
+                    </button>
+                </div>
+            ) : (
+                <>
+                    {/* Key Metrics */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="card p-5">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-primary-500/10 rounded-lg">
+                                    <Calendar className="w-5 h-5 text-primary-400" />
+                                </div>
+                                <span className="text-sm text-zinc-400">Totalt turer</span>
+                            </div>
+                            <p className="text-3xl font-bold">{stats.totalHunts}</p>
+                        </div>
+
+                        <div className="card p-5">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-emerald-500/10 rounded-lg">
+                                    <Eye className="w-5 h-5 text-emerald-400" />
+                                </div>
+                                <span className="text-sm text-zinc-400">Vilt sett</span>
+                            </div>
+                            <p className="text-3xl font-bold">{stats.totalGameSeen}</p>
+                        </div>
+
+                        <div className="card p-5">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-accent-500/10 rounded-lg">
+                                    <Target className="w-5 h-5 text-accent-400" />
+                                </div>
+                                <span className="text-sm text-zinc-400">Felt</span>
+                            </div>
+                            <p className="text-3xl font-bold">{stats.totalGameHarvested}</p>
+                        </div>
+
+                        <div className="card p-5">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-amber-500/10 rounded-lg">
+                                    <Award className="w-5 h-5 text-amber-400" />
+                                </div>
+                                <span className="text-sm text-zinc-400">Suksessrate</span>
+                            </div>
+                            <p className="text-3xl font-bold">{stats.successRate}%</p>
+                        </div>
+                    </div>
+
+                    {/* Hunt List - Moved up for better focus */}
+                    <div className="card">
+                        <div className="card-header flex items-center justify-between">
+                            <h2 className="text-lg font-semibold">Jaktturer {selectedYear}</h2>
+                            <span className="text-sm text-zinc-400">{filteredHunts.length} turer</span>
+                        </div>
+                        <div className="divide-y divide-white/5">
+                            {filteredHunts
+                                .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                .slice(0, showAllHunts ? undefined : 5)
+                                .map((hunt: any) => (
+                                    <button
+                                        key={hunt.id}
+                                        onClick={() => navigate(`/hunt/${hunt.id}`)}
+                                        className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors text-left"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-lg bg-primary-500/10 flex items-center justify-center text-primary-400 font-bold text-xs">
+                                                {new Date(hunt.date).toLocaleDateString('nb-NO', { day: '2-digit', month: 'short' }).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-medium text-text-primary">{hunt.location?.name || 'Ukjent sted'}</h3>
+                                                <p className="text-xs text-zinc-400 flex items-center gap-2">
+                                                    <span>{hunt.dogs && hunt.dogs.length > 0 ? 'Med hund' : 'Uten hund'}</span>
+                                                    {hunt.duration_minutes && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span>{Math.floor(hunt.duration_minutes / 60)}t {hunt.duration_minutes % 60}m</span>
+                                                        </>
+                                                    )}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            {(hunt.game_seen?.length > 0 || hunt.game_harvested?.length > 0) && (
+                                                <div className="flex flex-col items-end text-xs">
+                                                    {hunt.game_seen?.length > 0 && (
+                                                        <span className="text-zinc-400">
+                                                            {hunt.game_seen.reduce((acc: number, curr: any) => acc + curr.count, 0)} sett
+                                                        </span>
+                                                    )}
+                                                    {hunt.game_harvested?.length > 0 && (
+                                                        <span className="text-primary-400 font-medium">
+                                                            {hunt.game_harvested.reduce((acc: number, curr: any) => acc + curr.count, 0)} felt
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            <div className="text-zinc-500">
+                                                <ArrowLeft className="w-4 h-4 rotate-180" />
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))}
+                        </div>
+                        {filteredHunts.length > 5 && (
+                            <div className="p-4 border-t border-white/5 text-center">
+                                <button
+                                    onClick={() => setShowAllHunts(!showAllHunts)}
+                                    className="text-sm text-primary-400 hover:text-primary-300 font-medium"
                                 >
-                                    <option value="all">Alle hunder</option>
-                                    {activeDogs.map(dog => (
-                                        <option key={dog.id} value={dog.id}>{dog.name}</option>
-                                    ))}
-                                </select>
+                                    {showAllHunts ? 'Vis færre' : `Vis alle (${filteredHunts.length})`}
+                                </button>
                             </div>
                         )}
                     </div>
-                </div>
 
-                {/* Empty state */}
-                {filteredHunts.length === 0 ? (
-                    <div className="card p-12 text-center">
-                        <BarChart3 className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
-                        <h3 className="text-xl font-semibold mb-2">Ingen data for {selectedYear}</h3>
-                        <p className="text-zinc-400 mb-6">
-                            {selectedDog !== 'all'
-                                ? 'Denne hunden har ingen registrerte turer dette året.'
-                                : 'Du har ingen registrerte jaktturer dette året.'}
-                        </p>
-                        <button
-                            onClick={() => navigate('/')}
-                            className="btn-primary"
-                        >
-                            Registrer jakttur
-                        </button>
-                    </div>
-                ) : (
-                    <>
-                        {/* Key Metrics */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="card p-5">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="p-2 bg-primary-500/10 rounded-lg">
-                                        <Calendar className="w-5 h-5 text-primary-400" />
-                                    </div>
-                                    <span className="text-sm text-zinc-400">Totalt turer</span>
-                                </div>
-                                <p className="text-3xl font-bold">{stats.totalHunts}</p>
+                    {/* Secondary Metrics */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="card p-5">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm text-zinc-400">Total distanse</span>
+                                <TrendingUp className="w-4 h-4 text-zinc-500" />
                             </div>
-
-                            <div className="card p-5">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="p-2 bg-emerald-500/10 rounded-lg">
-                                        <Eye className="w-5 h-5 text-emerald-400" />
-                                    </div>
-                                    <span className="text-sm text-zinc-400">Vilt sett</span>
-                                </div>
-                                <p className="text-3xl font-bold">{stats.totalGameSeen}</p>
-                            </div>
-
-                            <div className="card p-5">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="p-2 bg-accent-500/10 rounded-lg">
-                                        <Target className="w-5 h-5 text-accent-400" />
-                                    </div>
-                                    <span className="text-sm text-zinc-400">Felt</span>
-                                </div>
-                                <p className="text-3xl font-bold">{stats.totalGameHarvested}</p>
-                            </div>
-
-                            <div className="card p-5">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="p-2 bg-amber-500/10 rounded-lg">
-                                        <Award className="w-5 h-5 text-amber-400" />
-                                    </div>
-                                    <span className="text-sm text-zinc-400">Suksessrate</span>
-                                </div>
-                                <p className="text-3xl font-bold">{stats.successRate}%</p>
-                            </div>
+                            <p className="text-2xl font-bold">{stats.totalDistance} km</p>
+                            <p className="text-xs text-zinc-500 mt-1">Snitt: {stats.avgDistance} km/tur</p>
                         </div>
 
-                        {/* Hunt List - Moved up for better focus */}
-                        <div className="card">
-                            <div className="card-header flex items-center justify-between">
-                                <h2 className="text-lg font-semibold">Jaktturer {selectedYear}</h2>
-                                <span className="text-sm text-zinc-400">{filteredHunts.length} turer</span>
+                        <div className="card p-5">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm text-zinc-400">Total tid</span>
+                                <Calendar className="w-4 h-4 text-zinc-500" />
                             </div>
-                            <div className="divide-y divide-white/5">
-                                {filteredHunts
-                                    .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                                    .slice(0, showAllHunts ? undefined : 5)
-                                    .map((hunt: any) => (
-                                        <button
-                                            key={hunt.id}
-                                            onClick={() => navigate(`/hunt/${hunt.id}`)}
-                                            className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors text-left"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-lg bg-primary-500/10 flex items-center justify-center text-primary-400 font-bold text-xs">
-                                                    {new Date(hunt.date).toLocaleDateString('nb-NO', { day: '2-digit', month: 'short' }).toUpperCase()}
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-medium text-text-primary">{hunt.location?.name || 'Ukjent sted'}</h3>
-                                                    <p className="text-xs text-zinc-400 flex items-center gap-2">
-                                                        <span>{hunt.dogs && hunt.dogs.length > 0 ? 'Med hund' : 'Uten hund'}</span>
-                                                        {hunt.duration_minutes && (
-                                                            <>
-                                                                <span>•</span>
-                                                                <span>{Math.floor(hunt.duration_minutes / 60)}t {hunt.duration_minutes % 60}m</span>
-                                                            </>
-                                                        )}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                {(hunt.game_seen?.length > 0 || hunt.game_harvested?.length > 0) && (
-                                                    <div className="flex flex-col items-end text-xs">
-                                                        {hunt.game_seen?.length > 0 && (
-                                                            <span className="text-zinc-400">
-                                                                {hunt.game_seen.reduce((acc: number, curr: any) => acc + curr.count, 0)} sett
-                                                            </span>
-                                                        )}
-                                                        {hunt.game_harvested?.length > 0 && (
-                                                            <span className="text-primary-400 font-medium">
-                                                                {hunt.game_harvested.reduce((acc: number, curr: any) => acc + curr.count, 0)} felt
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                <div className="text-zinc-500">
-                                                    <ArrowLeft className="w-4 h-4 rotate-180" />
-                                                </div>
-                                            </div>
-                                        </button>
-                                    ))}
+                            <p className="text-2xl font-bold">{Math.floor(stats.totalDuration / 60)}t {stats.totalDuration % 60}m</p>
+                            <p className="text-xs text-zinc-500 mt-1">
+                                Snitt: {stats.totalHunts > 0 ? Math.round(stats.totalDuration / stats.totalHunts) : 0} min/tur
+                            </p>
+                        </div>
+
+                        <div className="card p-5">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm text-zinc-400">Steder besøkt</span>
+                                <MapPin className="w-4 h-4 text-zinc-500" />
                             </div>
-                            {filteredHunts.length > 5 && (
-                                <div className="p-4 border-t border-white/5 text-center">
-                                    <button
-                                        onClick={() => setShowAllHunts(!showAllHunts)}
-                                        className="text-sm text-primary-400 hover:text-primary-300 font-medium"
-                                    >
-                                        {showAllHunts ? 'Vis færre' : `Vis alle (${filteredHunts.length})`}
-                                    </button>
-                                </div>
+                            <p className="text-2xl font-bold">{stats.uniqueLocations}</p>
+                            {stats.mostVisited && (
+                                <p className="text-xs text-zinc-500 mt-1">
+                                    Mest: {stats.mostVisited.name} ({stats.mostVisited.count}x)
+                                </p>
                             )}
                         </div>
+                    </div>
 
-                        {/* Secondary Metrics */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="card p-5">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm text-zinc-400">Total distanse</span>
-                                    <TrendingUp className="w-4 h-4 text-zinc-500" />
-                                </div>
-                                <p className="text-2xl font-bold">{stats.totalDistance} km</p>
-                                <p className="text-xs text-zinc-500 mt-1">Snitt: {stats.avgDistance} km/tur</p>
+                    {/* Game Type Breakdown */}
+                    {Object.keys(stats.gameTypes).length > 0 && (
+                        <div className="card">
+                            <div className="card-header">
+                                <h2 className="text-lg font-semibold">Viltarter</h2>
                             </div>
-
-                            <div className="card p-5">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm text-zinc-400">Total tid</span>
-                                    <Calendar className="w-4 h-4 text-zinc-500" />
+                            <div className="card-body">
+                                <div className="space-y-4">
+                                    {Object.entries(stats.gameTypes).map(([type, counts]) => (
+                                        <div key={type} className="flex items-center justify-between">
+                                            <span className="text-sm capitalize">{gameTypeLabels[type] || type.replace('_', ' ')}</span>
+                                            <div className="flex items-center gap-4 text-sm">
+                                                <span className="text-zinc-400">
+                                                    Sett: <span className="text-zinc-100 font-medium">{counts.seen}</span>
+                                                </span>
+                                                <span className="text-zinc-400">
+                                                    Felt: <span className="text-primary-400 font-medium">{counts.harvested}</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <p className="text-2xl font-bold">{Math.floor(stats.totalDuration / 60)}t {stats.totalDuration % 60}m</p>
-                                <p className="text-xs text-zinc-500 mt-1">
-                                    Snitt: {stats.totalHunts > 0 ? Math.round(stats.totalDuration / stats.totalHunts) : 0} min/tur
-                                </p>
-                            </div>
-
-                            <div className="card p-5">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm text-zinc-400">Steder besøkt</span>
-                                    <MapPin className="w-4 h-4 text-zinc-500" />
-                                </div>
-                                <p className="text-2xl font-bold">{stats.uniqueLocations}</p>
-                                {stats.mostVisited && (
-                                    <p className="text-xs text-zinc-500 mt-1">
-                                        Mest: {stats.mostVisited.name} ({stats.mostVisited.count}x)
-                                    </p>
-                                )}
                             </div>
                         </div>
-
-                        {/* Game Type Breakdown */}
-                        {Object.keys(stats.gameTypes).length > 0 && (
-                            <div className="card">
-                                <div className="card-header">
-                                    <h2 className="text-lg font-semibold">Viltarter</h2>
-                                </div>
-                                <div className="card-body">
-                                    <div className="space-y-4">
-                                        {Object.entries(stats.gameTypes).map(([type, counts]) => (
-                                            <div key={type} className="flex items-center justify-between">
-                                                <span className="text-sm capitalize">{gameTypeLabels[type] || type.replace('_', ' ')}</span>
-                                                <div className="flex items-center gap-4 text-sm">
-                                                    <span className="text-zinc-400">
-                                                        Sett: <span className="text-zinc-100 font-medium">{counts.seen}</span>
-                                                    </span>
-                                                    <span className="text-zinc-400">
-                                                        Felt: <span className="text-primary-400 font-medium">{counts.harvested}</span>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </>
-                )}
-            </div>
-        </>
+                    )}
+                </>
+            )}
+        </div>
     );
 }

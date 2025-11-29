@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, X, MapPin, Dog, Calendar, Target } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAppStore } from '../../store/useAppStore';
+import { useHunts } from '../../hooks/useApi';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 
@@ -20,40 +21,6 @@ interface SearchResult {
   route: string;
 }
 
-// Mock hunts data for search
-const mockHunts = [
-  {
-    id: '1',
-    title: 'Morgenjakt ved Storeberg',
-    date: '2024-11-10',
-    location: 'Storeberg',
-    dogs: ['Rolex'],
-    gameSeen: 3,
-    gameHarvested: 0,
-    notes: 'Rolex jobbet utmerket i terrenget rundt vannet',
-  },
-  {
-    id: '2',
-    title: 'Ettermiddagsjakt ved Tveiter',
-    date: '2024-11-08',
-    location: 'Tveiter',
-    dogs: ['Rolex'],
-    gameSeen: 3,
-    gameHarvested: 1,
-    notes: 'Godt vær og fin jakt',
-  },
-  {
-    id: '3',
-    title: 'Hanejakt Storeberg',
-    date: '2023-10-15',
-    location: 'Storeberg',
-    dogs: ['Rolex'],
-    gameSeen: 4,
-    gameHarvested: 1,
-    notes: 'God dag med Rolex',
-  },
-];
-
 export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -61,18 +28,24 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { dogs, recentLocations } = useAppStore();
+  const { data: hunts = [] } = useHunts();
 
   // Build searchable items from store data
   const searchableItems = useMemo(() => {
     const items: SearchResult[] = [];
 
-    // Add hunts
-    mockHunts.forEach((hunt) => {
+    // Add hunts from real data
+    hunts.forEach((hunt: any) => {
+      const dogNames = hunt.dogs?.map((dogId: string) => {
+        const dog = dogs.find(d => d.id === dogId);
+        return dog?.name || dogId;
+      }).join(', ') || 'Ingen hund';
+
       items.push({
         id: `hunt-${hunt.id}`,
         type: 'hunt',
-        title: hunt.title,
-        subtitle: `${format(new Date(hunt.date), 'd. MMMM yyyy', { locale: nb })} • ${hunt.location} • ${hunt.dogs.join(', ')}`,
+        title: hunt.title || `Jakttur ${format(new Date(hunt.date), 'd. MMM yyyy')}`,
+        subtitle: `${format(new Date(hunt.date), 'd. MMMM yyyy', { locale: nb })} • ${hunt.location?.name || 'Ukjent'} • ${dogNames}`,
         icon: Calendar,
         route: `/hunt/${hunt.id}`,
       });
@@ -82,7 +55,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
         items.push({
           id: `hunt-notes-${hunt.id}`,
           type: 'hunt',
-          title: hunt.title,
+          title: hunt.title || `Jakttur ${format(new Date(hunt.date), 'd. MMM yyyy')}`,
           subtitle: `Notater: "${hunt.notes.substring(0, 50)}${hunt.notes.length > 50 ? '...' : ''}"`,
           icon: Calendar,
           route: `/hunt/${hunt.id}`,
@@ -102,17 +75,20 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
       });
     });
 
-    // Add locations with stats
-    const locationStats: Record<string, { count: number; distance: number }> = {};
-    mockHunts.forEach((hunt) => {
-      if (!locationStats[hunt.location]) {
-        locationStats[hunt.location] = { count: 0, distance: 0 };
+    // Add locations with stats from real hunts
+    const locationStats: Record<string, { count: number }> = {};
+    hunts.forEach((hunt: any) => {
+      const locationName = hunt.location?.name;
+      if (locationName) {
+        if (!locationStats[locationName]) {
+          locationStats[locationName] = { count: 0 };
+        }
+        locationStats[locationName].count++;
       }
-      locationStats[hunt.location].count++;
     });
 
     recentLocations.forEach((loc) => {
-      const stats = locationStats[loc] || { count: 0, distance: 0 };
+      const stats = locationStats[loc] || { count: 0 };
       items.push({
         id: `location-${loc}`,
         type: 'location',
@@ -145,7 +121,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     });
 
     return items;
-  }, [dogs, recentLocations]);
+  }, [dogs, recentLocations, hunts]);
 
   useEffect(() => {
     if (isOpen) {

@@ -1,61 +1,34 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Only allow authenticated users with specific emails
-    function isAllowedUser() {
-      return request.auth != null &&
-             (request.auth.token.email == 'sandbergsimen90@gmail.com' ||
+    
+    // Helper function to check if user is whitelisted
+    function isWhitelisted() {
+      return request.auth != null && 
+             (request.auth.token.email == 'sandbergsimen90@gmail.com' || 
               request.auth.token.email == 'w.geicke@gmail.com');
     }
-
-    // Hunts collection
+    
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Hunts collection - only whitelisted users
     match /hunts/{huntId} {
-      // Allow create if user is allowed
-      allow create: if isAllowedUser() && 
-                      request.resource.data.userId == request.auth.uid;
-      
-      // Allow read/update/delete if user owns the hunt
-      allow read, update, delete: if isAllowedUser() &&
-                                     resource.data.userId == request.auth.uid;
+      allow read, write: if isWhitelisted();
     }
-
-    // Dogs collection
+    
+    // Dogs collection - only whitelisted users
     match /dogs/{dogId} {
-      // Allow create if user is allowed
-      allow create: if isAllowedUser() && 
-                      request.resource.data.userId == request.auth.uid;
-      
-      // Allow read/update if user owns the dog
-      allow read, update: if isAllowedUser() &&
-                             resource.data.userId == request.auth.uid;
-      
-      // Allow delete if user owns the dog (simplified check)
-      // Allow delete if user owns the dog
-      allow delete: if resource.data.userId == request.auth.uid;
+      allow read, write: if isWhitelisted();
     }
-
-    // Tracks collection (for GPX data)
+    
+    // Tracks collection - only whitelisted users
     match /tracks/{trackId} {
-      allow create: if isAllowedUser() && 
-                      request.resource.data.userId == request.auth.uid;
-      
-      allow read, update, delete: if isAllowedUser() &&
-                                     resource.data.userId == request.auth.uid;
+      allow read, write: if isWhitelisted();
     }
-
-    // Photos collection (if you store photo metadata)
-    match /photos/{photoId} {
-      allow create: if isAllowedUser() && 
-                      request.resource.data.userId == request.auth.uid;
-      
-      allow read, update, delete: if isAllowedUser() &&
-                                     resource.data.userId == request.auth.uid;
-    }
-
-    // Users collection
-    match /users/{userId} {
-      allow read, write: if isAllowedUser() &&
-                           request.auth.uid == userId;
-    }
+    
+    // Any other collections - deny by default
   }
 }

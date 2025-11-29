@@ -3,14 +3,39 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import toast from 'react-hot-toast';
 
+// WHITELIST - Only these emails can access the app
+const ALLOWED_EMAILS = [
+  'sandbergsimen90@gmail.com',
+  'w.geicke@gmail.com'
+];
+
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showUnauthorizedAlert, setShowUnauthorizedAlert] = useState(false);
   const navigate = useNavigate();
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await authService.signInWithGoogle();
+      const user = await authService.signInWithGoogle();
+
+      // Check if user email is in whitelist
+      if (!user.email || !ALLOWED_EMAILS.includes(user.email.toLowerCase())) {
+        // UNAUTHORIZED ACCESS - TRIGGER ALARM
+        setShowUnauthorizedAlert(true);
+
+        // Sign out the unauthorized user
+        await authService.signOut();
+
+        // Keep the alert visible for 5 seconds
+        setTimeout(() => {
+          setShowUnauthorizedAlert(false);
+        }, 5000);
+
+        return;
+      }
+
+      // Authorized user - proceed
       toast.success('Velkommen!');
       navigate('/');
     } catch (error: any) {
@@ -105,6 +130,41 @@ export default function Login() {
           </button>
         </div>
       </div>
-    </div >
+
+      {/* UNAUTHORIZED ACCESS ALERT - FULL SCREEN ALARM */}
+      {showUnauthorizedAlert && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center animate-pulse">
+          {/* Flashing Red Background */}
+          <div
+            className="absolute inset-0 bg-red-600"
+            style={{
+              animation: 'flash 0.5s infinite'
+            }}
+          />
+
+          {/* Alert Content */}
+          <div className="relative z-10 bg-black border-8 border-red-600 rounded-3xl p-12 max-w-2xl mx-4 text-center shadow-2xl shadow-red-600/50 animate-bounce">
+            <div className="text-9xl mb-6">🚨</div>
+            <h1 className="text-6xl font-black text-red-600 mb-6 uppercase tracking-wider drop-shadow-lg">
+              DU SKAL IKKE INN HER
+            </h1>
+            <p className="text-3xl text-white font-bold mb-4">
+              UAUTORISERT TILGANG
+            </p>
+            <p className="text-xl text-red-400">
+              Denne applikasjonen er kun for autoriserte brukere
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Add CSS animation for flashing */}
+      <style>{`
+        @keyframes flash {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+      `}</style>
+    </div>
   );
 }

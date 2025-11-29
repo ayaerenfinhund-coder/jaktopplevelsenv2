@@ -1,0 +1,27 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    
+    "hunts": {
+      "$huntId": {
+        ".read": "auth != null && (auth.token.email == 'sandbergsimen90@gmail.com' || auth.token.email == 'w.geicke@gmail.com')",
+        ".write": "auth != null && (auth.token.email == 'sandbergsimen90@gmail.com' || auth.token.email == 'w.geicke@gmail.com')"
+      }
+    },
+    
+    "dogs": {
+      "$dogId": {
+        ".read": "auth != null && (auth.token.email == 'sandbergsimen90@gmail.com' || auth.token.email == 'w.geicke@gmail.com')",
+        ".write": "auth != null && (auth.token.email == 'sandbergsimen90@gmail.com' || auth.token.email == 'w.geicke@gmail.com')"
+      }
+    },
+    
+    "tracks": {
+      "$trackId": {
+        ".read": "auth != null && (auth.token.email == 'sandbergsimen90@gmail.com' || auth.token.email == 'w.geicke@gmail.com')",
+        ".write": "auth != null && (auth.token.email == 'sandbergsimen90@gmail.com' || auth.token.email == 'w.geicke@gmail.com')"
+      }
+    }
+  }
+}

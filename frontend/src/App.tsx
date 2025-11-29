@@ -49,18 +49,24 @@ function App() {
             element={user ? <Navigate to="/" replace /> : <Login />}
           />
           <Route path="/share/:shareId" element={<PublicHuntView />} />
-          <Route
-            path="/"
-            element={<Layout />}
-          >
-            <Route index element={<Dashboard />} />
-            <Route path="hunt/new" element={<NewHunt />} />
-            <Route path="hunt/:id" element={<HuntDetail />} />
-            <Route path="dogs" element={<Dogs />} />
-            <Route path="statistics" element={<Statistics />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
+
+          {/* Protected Routes - Require Authentication */}
+          {!user ? (
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          ) : (
+            <Route
+              path="/"
+              element={<Layout />}
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="hunt/new" element={<NewHunt />} />
+              <Route path="hunt/:id" element={<HuntDetail />} />
+              <Route path="dogs" element={<Dogs />} />
+              <Route path="statistics" element={<Statistics />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          )}
         </Routes>
       </Suspense>
     </ErrorBoundary>

@@ -1,18 +1,22 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Brukerbilder
-    match /users/{userId}/{allPaths=**} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null
-                   && request.auth.uid == userId
-                   && request.resource.size < 50 * 1024 * 1024 // Maks 50MB
-                   && request.resource.contentType.matches('image/.*');
+    
+    // Helper function to check if user is whitelisted
+    function isWhitelisted() {
+      return request.auth != null && 
+             (request.auth.token.email == 'sandbergsimen90@gmail.com' || 
+              request.auth.token.email == 'w.geicke@gmail.com');
     }
-
-    // GPX-filer
-    match /users/{userId}/gpx/{fileName} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    
+    // Default deny all
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+    
+    // User uploads - only whitelisted users can upload/read
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if isWhitelisted();
     }
   }
 }

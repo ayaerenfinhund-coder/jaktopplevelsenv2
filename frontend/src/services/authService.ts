@@ -8,6 +8,10 @@ import {
 import { auth } from '../lib/firebase';
 
 const googleProvider = new GoogleAuthProvider();
+// Force account selection every time - allows switching between accounts
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 export interface AppUser {
   uid: string;
