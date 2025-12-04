@@ -240,6 +240,34 @@ export default function NewHunt() {
     }
   };
 
+  const handleGpxUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const toastId = toast.loading('Analyserer GPX-fil...');
+
+      try {
+        const trackData = await apiClient.uploadGpx(file);
+
+        setMatchedTrack(trackData);
+        setShowTrackConfirm(true);
+
+        if (trackData.start_time) {
+          setStartTime(format(new Date(trackData.start_time), 'HH:mm'));
+          const start = new Date(trackData.start_time);
+          const end = new Date(start.getTime() + (trackData.statistics?.duration_minutes || 120) * 60000);
+          setEndTime(format(end, 'HH:mm'));
+        }
+
+        toast.success('GPX-fil lastet opp!', { id: toastId });
+      } catch (error: any) {
+        console.error('GPX upload error:', error);
+        toast.error(error.message || 'Kunne ikke lese GPX-fil', { id: toastId });
+      } finally {
+        if (gpxInputRef.current) gpxInputRef.current.value = '';
+      }
+    }
+  };
+
   const removePhoto = (index: number) => {
     setPhotos(photos.filter((_, i) => i !== index));
   };
@@ -603,12 +631,7 @@ export default function NewHunt() {
           <input
             type="file"
             ref={gpxInputRef}
-            onChange={(e) => {
-              // TODO: Add GPX upload handler
-              if (e.target.files && e.target.files[0]) {
-                toast.success('GPX-fil valgt: ' + e.target.files[0].name);
-              }
-            }}
+            onChange={handleGpxUpload}
             accept=".gpx"
             className="hidden"
           />
