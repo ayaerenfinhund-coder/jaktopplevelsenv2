@@ -22,9 +22,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SeasonStatsChart from '../components/dashboard/SeasonStatsChart';
-import AuroraBackground from '../components/common/AuroraBackground';
 import TiltCard from '../components/common/TiltCard';
-import confetti from 'canvas-confetti';
 import { format } from 'date-fns';
 import { DatePicker, TimePicker } from '../components/common/CustomPickers';
 import Modal from '../components/common/Modal';
@@ -35,6 +33,7 @@ import { apiClient } from '../services/apiClient';
 import { useAppStore } from '../store/useAppStore';
 import { useAuth } from '../hooks/useAuth';
 import HuntMap from '../components/maps/HuntMap';
+import CustomSelect from '../components/common/CustomSelect';
 import type { Hunt } from '../types';
 
 // Game types
@@ -187,14 +186,6 @@ export default function Dashboard() {
           photos: uploadedPhotos
         });
       }
-
-      // Confetti explosion
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#eab308', '#10b981', '#ffffff']
-      });
 
       queryClient.invalidateQueries({ queryKey: ['hunts'] });
       toast.success('Jakttur lagret!');
@@ -558,562 +549,598 @@ export default function Dashboard() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="space-y-8 relative"
     >
-      <AuroraBackground />
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight text-white mb-2">
-            Hei, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-emerald-400">{user?.displayName?.split(' ')[0] || 'Jeger'}</span> 👋
-          </h1>
-          <p className="text-zinc-400 text-lg">Logg jaktturen her</p>
-        </div>
-
-      </div>
-
-      {/* Draft recovery banner */}
-      {showDraftBanner && (
-        <div className="bg-primary-900/20 border border-primary-500/30 rounded-lg p-4 flex items-center justify-between backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
-            <div className="text-sm text-zinc-200">
-              <span className="font-medium">Ulagret kladd funnet.</span>
-              <span className="text-zinc-400 ml-2">Vil du fortsette der du slapp?</span>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={restoreDraft}
-              className="text-xs bg-primary-600 hover:bg-primary-500 text-white px-3 py-1.5 rounded transition-colors"
-            >
-              Gjenopprett
-            </button>
-            <button
-              onClick={() => {
-                clearDraft();
-                setShowDraftBanner(false);
-              }}
-              className="text-xs text-zinc-400 hover:text-white transition-colors"
-            >
-              Forkast
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Quick Log & Recent Hunts */}
-        <div className="lg:col-span-2 space-y-8">
-
-          {/* Quick Log Card */}
-          <div className="card overflow-hidden border-zinc-800/60 bg-zinc-900/40">
-            <div className="card-header bg-zinc-900/50 flex justify-between items-center py-3">
-              <h2 className="font-semibold text-zinc-100 flex items-center gap-2 text-sm uppercase tracking-wider">
-                <Zap className="w-4 h-4 text-primary-500" /> Hurtigregistrering
-              </h2>
-              {showDraftBanner && (
-                <span className="text-[10px] bg-primary-500/10 text-primary-400 px-2 py-0.5 rounded-full font-medium border border-primary-500/20">
-                  Kladd lagret
-                </span>
-              )}
-            </div>
-
-            <div className="p-6 space-y-5">
-              {/* Date/Time Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="input-label">Dato</label>
-                  <DatePicker
-                    selected={huntDate}
-                    onChange={setHuntDate}
-                  />
-                </div>
-                <div>
-                  <label className="input-label">Starttid</label>
-                  <TimePicker
-                    value={startTime}
-                    onChange={setStartTime}
-                  />
-                </div>
-                <div>
-                  <label className="input-label">Sluttid</label>
-                  <TimePicker
-                    value={endTime}
-                    onChange={setEndTime}
-                  />
-                </div>
+      {/* Dynamic time-based greeting */}
+      {(() => {
+        const hour = new Date().getHours();
+        const isEvening = hour >= 17 || hour < 4;
+        const isMorning = hour >= 4 && hour < 11;
+        const greeting = isEvening ? 'God kveld' : isMorning ? 'God morgen' : 'God dag';
+        const today = new Date().toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' });
+        return (
+          <div className="mb-[1.5rem]">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isEvening ? 'bg-zinc-800' : isMorning ? 'bg-amber-500/10' : 'bg-primary-500/10'}`}>
+                {isMorning ? (
+                  <svg className="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+                  </svg>
+                ) : isEvening ? (
+                  <svg className="w-6 h-6 text-zinc-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+                  </svg>
+                )}
               </div>
-
-              {/* Dog/Location Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="input-label">
-                    Hund {!selectedDog && <span className="text-error">*</span>}
-                  </label>
-                  <select
-                    value={selectedDog}
-                    onChange={(e) => setSelectedDog(e.target.value)}
-                    className={`select text-sm ${validationErrors.dog ? 'border-error ring-1 ring-error' : ''}`}
-                  >
-                    <option value="">Velg hund</option>
-                    {activeDogs.map((dog) => (
-                      <option key={dog.id} value={dog.id}>{dog.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="input-label">
-                    Sted {!selectedLocation && !customLocation && <span className="text-error">*</span>}
-                  </label>
-                  {selectedLocation === '_custom' ? (
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={customLocation}
-                        onChange={(e) => setCustomLocation(e.target.value)}
-                        placeholder="Skriv stedsnavn..."
-                        className={`input text-sm pr-8 ${validationErrors.location ? 'border-error ring-1 ring-error' : ''}`}
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => { setSelectedLocation(''); setCustomLocation(''); }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <select
-                      value={selectedLocation}
-                      onChange={(e) => {
-                        if (e.target.value === '_custom') {
-                          setSelectedLocation('_custom');
-                          setCustomLocation('');
-                        } else {
-                          setSelectedLocation(e.target.value);
-                        }
-                      }}
-                      className={`select text-sm ${validationErrors.location ? 'border-error ring-1 ring-error' : ''}`}
-                    >
-                      <option value="">Velg sted</option>
-                      {recentLocations.map((loc) => (
-                        <option key={loc} value={loc}>{loc}</option>
-                      ))}
-                      <option value="_custom">+ Nytt sted</option>
-                    </select>
-                  )}
-                </div>
-              </div>
-
-              {/* Weather Widget (Inline) */}
-              {weather && (
-                <div className="bg-zinc-900/50 rounded-lg p-3 border border-zinc-800 flex items-center gap-6 text-sm">
-                  <div className="flex items-center gap-2 text-zinc-300">
-                    <Thermometer className="w-4 h-4 text-primary-500" />
-                    <span>{weather.temperature}°C</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-zinc-300">
-                    <Wind className="w-4 h-4 text-primary-500" />
-                    <span>{weather.wind_speed} m/s {weather.wind_direction}</span>
-                  </div>
-                  <span className="text-zinc-500 border-l border-zinc-800 pl-4">{weather.conditions}</span>
-                </div>
-              )}
-
-              {/* Notes */}
               <div>
-                <label className="input-label">Notater</label>
-                <textarea
-                  value={quickNote}
-                  onChange={(e) => setQuickNote(e.target.value)}
-                  placeholder="Hvordan var turen?"
-                  className="input text-sm min-h-[100px] resize-none"
-                />
+                <h1 className="text-2xl font-semibold text-white tracking-tight">
+                  {greeting}, <span className="text-primary-400">{user?.displayName?.split(' ')[0] || 'Jeger'}</span>
+                </h1>
+                <p className="text-sm text-zinc-500 capitalize">{today}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      <div className="space-y-4">
+
+        {/* Draft recovery banner */}
+        {showDraftBanner && (
+          <div className="bg-primary-900/20 border border-primary-500/30 rounded-lg p-4 flex items-center justify-between backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
+              <div className="text-sm text-zinc-200">
+                <span className="font-medium">Ulagret kladd funnet.</span>
+                <span className="text-zinc-400 ml-2">Vil du fortsette der du slapp?</span>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={restoreDraft}
+                className="text-xs bg-primary-600 hover:bg-primary-500 text-white px-3 py-1.5 rounded transition-colors"
+              >
+                Gjenopprett
+              </button>
+              <button
+                onClick={() => {
+                  clearDraft();
+                  setShowDraftBanner(false);
+                }}
+                className="text-xs text-zinc-400 hover:text-white transition-colors"
+              >
+                Forkast
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column: Quick Log & Recent Hunts */}
+          <div className="lg:col-span-2 space-y-5">
+
+            {/* Quick Log Card */}
+            <div className="card overflow-hidden border-zinc-800/60 bg-zinc-900/40">
+              <div className="card-header bg-zinc-900/50 flex justify-between items-center py-3">
+                <h2 className="font-semibold text-zinc-100 flex items-center gap-2 text-sm uppercase tracking-wider">
+                  <Zap className="w-4 h-4 text-primary-500" /> Hurtigregistrering
+                </h2>
+                {showDraftBanner && (
+                  <span className="text-[10px] bg-primary-500/10 text-primary-400 px-2 py-0.5 rounded-full font-medium border border-primary-500/20">
+                    Kladd lagret
+                  </span>
+                )}
               </div>
 
-              {/* Action Bar */}
-              <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-800/50">
-                <button
-                  onClick={() => setShowGameModal(true)}
-                  className="flex-1 btn-secondary text-xs sm:text-sm py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-14 sm:h-auto"
-                  title="Registrer vilt"
-                >
-                  <Target className="w-4 h-4" />
-                  <span className="text-[10px] sm:text-sm leading-none sm:leading-normal">Vilt</span>
-                  {(Object.values(gameSeen).reduce((a, b) => a + b, 0) > 0 || Object.values(gameHarvested).reduce((a, b) => a + b, 0) > 0) && (
-                    <span className="ml-1 bg-primary-500/20 text-primary-400 text-xs px-1.5 py-0.5 rounded">
-                      {Object.values(gameSeen).reduce((a, b) => a + b, 0) + Object.values(gameHarvested).reduce((a, b) => a + b, 0)}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 btn-secondary text-xs sm:text-sm py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-14 sm:h-auto"
-                  title="Last opp bilder"
-                >
-                  <Camera className="w-4 h-4" />
-                  <span className="text-[10px] sm:text-sm leading-none sm:leading-normal">Bilder</span>
-                  {photos.length > 0 && (
-                    <span className="ml-1 bg-primary-500/20 text-primary-400 text-xs px-1.5 py-0.5 rounded">
-                      {photos.length}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => gpxInputRef.current?.click()}
-                  className="flex-1 btn-secondary text-xs sm:text-sm py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-14 sm:h-auto"
-                  title="Last opp GPX-spor"
-                >
-                  <Activity className="w-4 h-4" />
-                  <span className="text-[10px] sm:text-sm leading-none sm:leading-normal">GPX</span>
-                  {matchedTrack && (
-                    <span className="ml-1 bg-emerald-500/20 text-emerald-400 text-xs px-1.5 py-0.5 rounded">
-                      ✓
-                    </span>
-                  )}
-                </button>
-                <input
-                  type="file"
-                  ref={gpxInputRef}
-                  onChange={handleGpxUpload}
-                  accept=".gpx"
-                  className="hidden"
-                />
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handlePhotoUpload}
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                />
-
-                <button
-                  onClick={handleSave}
-                  disabled={createHuntMutation.isPending}
-                  className="flex-[1.5] btn-primary text-xs sm:text-sm py-2.5 flex items-center justify-center gap-2 shadow-lg shadow-primary-900/20"
-                >
-                  <Send className="w-4 h-4" />
-                  {createHuntMutation.isPending ? 'Lagrer...' : 'Lagre tur'}
-                </button>
-              </div>
-
-              {/* Track Confirmation & Map Preview */}
-              {showTrackConfirm && matchedTrack && (
-                <div className="space-y-3">
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2 text-emerald-400">
-                      <CheckCircle className="w-4 h-4" />
-                      <span>Spor lagt til: {matchedTrack.distance_km} km</span>
-                    </div>
-                    <button onClick={() => { setMatchedTrack(null); setShowTrackConfirm(false); }} className="text-zinc-500 hover:text-zinc-300">✕</button>
+              <div className="p-4 space-y-4">
+                {/* Date/Time Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="input-label">Dato</label>
+                    <DatePicker
+                      selected={huntDate}
+                      onChange={setHuntDate}
+                    />
                   </div>
-
-                  {/* Map Preview */}
-                  <div className="h-[300px] rounded-lg overflow-hidden border border-zinc-800">
-                    <HuntMap
-                      tracks={[{
-                        id: matchedTrack.id,
-                        hunt_id: 'preview',
-                        name: matchedTrack.name || 'Importert spor',
-                        source: 'gpx_import',
-                        geojson: matchedTrack.geojson,
-                        statistics: matchedTrack.statistics,
-                        color: '#D4752E', // Default orange color
-                        start_time: matchedTrack.start_time,
-                        end_time: matchedTrack.end_time,
-                        created_at: new Date().toISOString()
-                      }]}
-                      initialHeight="small"
-                      showControls={true}
+                  <div>
+                    <label className="input-label">Starttid</label>
+                    <TimePicker
+                      value={startTime}
+                      onChange={setStartTime}
+                    />
+                  </div>
+                  <div>
+                    <label className="input-label">Sluttid</label>
+                    <TimePicker
+                      value={endTime}
+                      onChange={setEndTime}
                     />
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Recent Hunts List */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <h3 className="text-lg font-medium text-zinc-200">Siste turer</h3>
-              <div className="flex gap-2">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                  <input
-                    type="text"
-                    placeholder="Søk..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-zinc-900 border border-zinc-800 rounded-lg pl-9 pr-3 py-1.5 text-sm w-40 focus:w-60 transition-all focus:border-primary-500 focus:outline-none"
+                {/* Dog/Location Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="input-label">
+                      Hund {!selectedDog && <span className="text-error">*</span>}
+                    </label>
+                    <CustomSelect
+                      value={selectedDog}
+                      onChange={setSelectedDog}
+                      options={[
+                        { value: '', label: 'Velg hund' },
+                        ...activeDogs.map((dog) => ({
+                          value: dog.id,
+                          label: dog.name,
+                          icon: <Dog className="w-4 h-4 text-primary-400" />
+                        }))
+                      ]}
+                      placeholder="Velg hund"
+                      error={!!validationErrors.dog}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="input-label">
+                      Sted {!selectedLocation && !customLocation && <span className="text-error">*</span>}
+                    </label>
+                    {selectedLocation === '_custom' ? (
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={customLocation}
+                          onChange={(e) => setCustomLocation(e.target.value)}
+                          placeholder="Skriv stedsnavn..."
+                          className={`input text-sm pr-8 ${validationErrors.location ? 'border-error ring-1 ring-error' : ''}`}
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => { setSelectedLocation(''); setCustomLocation(''); }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <CustomSelect
+                        value={selectedLocation}
+                        onChange={(val) => {
+                          if (val === '_custom') {
+                            setSelectedLocation('_custom');
+                            setCustomLocation('');
+                          } else {
+                            setSelectedLocation(val);
+                          }
+                        }}
+                        options={[
+                          { value: '', label: 'Velg sted' },
+                          ...recentLocations.map((loc) => ({
+                            value: loc,
+                            label: loc,
+                            icon: <MapPin className="w-4 h-4 text-primary-400" />
+                          })),
+                          { value: '_custom', label: '+ Nytt sted' }
+                        ]}
+                        placeholder="Velg sted"
+                        error={!!validationErrors.location}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Weather Widget (Inline) */}
+                {weather && (
+                  <div className="bg-zinc-900/50 rounded-lg p-3 border border-zinc-800 flex items-center gap-6 text-sm">
+                    <div className="flex items-center gap-2 text-zinc-300">
+                      <Thermometer className="w-4 h-4 text-primary-500" />
+                      <span>{weather.temperature}°C</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-zinc-300">
+                      <Wind className="w-4 h-4 text-primary-500" />
+                      <span>{weather.wind_speed} m/s {weather.wind_direction}</span>
+                    </div>
+                    <span className="text-zinc-500 border-l border-zinc-800 pl-4">{weather.conditions}</span>
+                  </div>
+                )}
+
+                {/* Notes */}
+                <div>
+                  <label className="input-label">Notater</label>
+                  <textarea
+                    value={quickNote}
+                    onChange={(e) => setQuickNote(e.target.value)}
+                    placeholder="Hvordan var turen?"
+                    className="input text-sm min-h-[100px] resize-none"
                   />
                 </div>
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`p-1.5 rounded-lg border ${showFilters ? 'bg-primary-500/10 border-primary-500/30 text-primary-400' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'}`}
-                >
-                  <Filter className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
 
-            {/* Filters Panel */}
-            {showFilters && (
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-3 grid grid-cols-3 gap-2 animate-slide-down">
-                <select value={filterGame} onChange={(e) => setFilterGame(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-sm text-zinc-300">
-                  <option value="">Alle arter</option>
-                  {gameTypes.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                </select>
-                <select value={filterLocation} onChange={(e) => setFilterLocation(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-sm text-zinc-300">
-                  <option value="">Alle steder</option>
-                  {recentLocations.map(l => <option key={l} value={l}>{l}</option>)}
-                </select>
-                <select value={filterDog} onChange={(e) => setFilterDog(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-sm text-zinc-300">
-                  <option value="">Alle hunder</option>
-                  {activeDogs.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {isLoading ? (
-                <>
-                  <HuntCardSkeleton />
-                  <HuntCardSkeleton />
-                </>
-              ) : filteredHunts.length === 0 ? (
-                <div className="card p-12 text-center border-dashed border-zinc-800">
-                  <MapPin className="w-12 h-12 mx-auto text-zinc-700 mb-4" />
-                  <p className="text-zinc-500">Ingen turer funnet.</p>
-                </div>
-              ) : (
-                filteredHunts.map((hunt: Hunt) => (
-                  <motion.div
-                    layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
-                    key={hunt.id}
-                    onClick={() => navigate(`/hunt/${hunt.id}`)}
-                    className="card hover:border-primary-500/30 hover:bg-zinc-900/80 transition-all cursor-pointer group"
+                {/* Action Bar */}
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-800/50">
+                  <button
+                    onClick={() => setShowGameModal(true)}
+                    className="flex-1 btn-secondary text-xs sm:text-sm py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-14 sm:h-auto"
+                    title="Registrer vilt"
                   >
-                    <div className="p-5">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="font-semibold text-zinc-100 group-hover:text-primary-400 transition-colors">{hunt.title}</h3>
-                          <div className="flex items-center gap-2 text-xs text-zinc-500 mt-1">
-                            <Calendar className="w-3 h-3" />
-                            <span>{format(new Date(hunt.date), 'dd.MM.yyyy')}</span>
-                            <span>•</span>
-                            <MapPin className="w-3 h-3" />
-                            <span>{hunt.location.name}</span>
-                          </div>
-                        </div>
-                        {hunt.photos && hunt.photos.length > 0 && (
-                          <div className="bg-zinc-800/50 p-1.5 rounded-md">
-                            <ImageIcon className="w-4 h-4 text-zinc-400" />
-                          </div>
-                        )}
+                    <Target className="w-4 h-4" />
+                    <span className="text-[10px] sm:text-sm leading-none sm:leading-normal">Vilt</span>
+                    {(Object.values(gameSeen).reduce((a, b) => a + b, 0) > 0 || Object.values(gameHarvested).reduce((a, b) => a + b, 0) > 0) && (
+                      <span className="ml-1 bg-primary-500/20 text-primary-400 text-xs px-1.5 py-0.5 rounded">
+                        {Object.values(gameSeen).reduce((a, b) => a + b, 0) + Object.values(gameHarvested).reduce((a, b) => a + b, 0)}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1 btn-secondary text-xs sm:text-sm py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-14 sm:h-auto"
+                    title="Last opp bilder"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span className="text-[10px] sm:text-sm leading-none sm:leading-normal">Bilder</span>
+                    {photos.length > 0 && (
+                      <span className="ml-1 bg-primary-500/20 text-primary-400 text-xs px-1.5 py-0.5 rounded">
+                        {photos.length}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => gpxInputRef.current?.click()}
+                    className="flex-1 btn-secondary text-xs sm:text-sm py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-14 sm:h-auto"
+                    title="Last opp GPX-spor"
+                  >
+                    <Activity className="w-4 h-4" />
+                    <span className="text-[10px] sm:text-sm leading-none sm:leading-normal">GPX</span>
+                    {matchedTrack && (
+                      <span className="ml-1 bg-emerald-500/20 text-emerald-400 text-xs px-1.5 py-0.5 rounded">
+                        ✓
+                      </span>
+                    )}
+                  </button>
+                  <input
+                    type="file"
+                    ref={gpxInputRef}
+                    onChange={handleGpxUpload}
+                    accept=".gpx"
+                    className="hidden"
+                  />
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handlePhotoUpload}
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                  />
+
+                  <button
+                    onClick={handleSave}
+                    disabled={createHuntMutation.isPending}
+                    className="flex-[1.5] btn-primary text-xs sm:text-sm py-2.5 flex items-center justify-center gap-2 shadow-lg shadow-primary-900/20"
+                  >
+                    <Send className="w-4 h-4" />
+                    {createHuntMutation.isPending ? 'Lagrer...' : 'Lagre tur'}
+                  </button>
+                </div>
+
+                {/* Track Confirmation & Map Preview */}
+                {showTrackConfirm && matchedTrack && (
+                  <div className="space-y-3">
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2 text-emerald-400">
+                        <CheckCircle className="w-4 h-4" />
+                        <span>Spor lagt til: {matchedTrack.distance_km} km</span>
                       </div>
-
-                      {/* Stats Row */}
-                      <div className="flex items-center gap-4 pt-3 border-t border-zinc-800/50">
-                        <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-                          <Dog className="w-3.5 h-3.5" />
-                          <span>{hunt.dogs.length} hund{hunt.dogs.length !== 1 ? 'er' : ''}</span>
-                        </div>
-                        {(hunt.game_seen.length > 0 || hunt.game_harvested.length > 0) && (
-                          <>
-                            <div className="w-px h-3 bg-zinc-800" />
-                            <div className="flex gap-3 text-xs">
-                              {hunt.game_seen.length > 0 && (
-                                <span className="text-primary-400 font-medium">
-                                  {hunt.game_seen.reduce((a, g) => a + g.count, 0)} sett
-                                </span>
-                              )}
-                              {hunt.game_harvested.length > 0 && (
-                                <span className="text-emerald-400 font-medium">
-                                  {hunt.game_harvested.reduce((a, g) => a + g.count, 0)} Skutt
-                                </span>
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Stats & Info */}
-        <div className="space-y-6">
-
-          {/* Season Stats Card */}
-          <TiltCard className="card bg-gradient-to-br from-zinc-900 to-zinc-900/50 border-zinc-800 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="p-5 relative">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-semibold text-zinc-100 flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-amber-500" /> Sesong {selectedSeason}
-                </h3>
-                <div className="flex gap-1">
-                  <button onClick={() => navigateSeason('next')} disabled={availableSeasons.indexOf(selectedSeason) === 0} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4 rotate-180" /></button>
-                  <button onClick={() => navigateSeason('prev')} disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 text-center mb-6">
-                <div className="p-3 bg-zinc-800/30 rounded-lg backdrop-blur-sm">
-                  <div className="text-2xl font-bold text-white">{seasonStats.total_hunts}</div>
-                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Turer</div>
-                </div>
-                <div className="p-3 bg-zinc-800/30 rounded-lg backdrop-blur-sm">
-                  <div className="text-2xl font-bold text-primary-400">{seasonStats.total_seen}</div>
-                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Sett</div>
-                </div>
-                <div className="p-3 bg-zinc-800/30 rounded-lg backdrop-blur-sm">
-                  <div className="text-2xl font-bold text-emerald-400">{seasonStats.total_harvested}</div>
-                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Skutt</div>
-                </div>
-              </div>
-
-              <div className="border-t border-zinc-800/50 pt-4">
-                <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2 pl-1">Aktivitet</h4>
-                <SeasonStatsChart hunts={filteredHunts} season={selectedSeason} />
-              </div>
-
-              <button onClick={() => navigate('/statistics')} className="w-full mt-4 btn-outline text-xs py-2">
-                Se full statistikk
-              </button>
-            </div>
-          </TiltCard>
-
-
-
-        </div>
-      </div>
-
-      {/* Game modal */}
-      <Modal
-        isOpen={showGameModal}
-        onClose={() => setShowGameModal(false)}
-        title="Vilt observert og Skutt"
-        size="lg"
-      >
-        <div className="space-y-6">
-          <div className="space-y-3">
-            {gameTypes
-              .filter((g) => (gameSeen[g.id] || 0) > 0 || (gameHarvested[g.id] || 0) > 0)
-              .map((game) => {
-                const seen = gameSeen[game.id] || 0;
-                const harvested = gameHarvested[game.id] || 0;
-                return (
-                  <div key={game.id} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-medium text-zinc-100">{game.name}</span>
-                      <button
-                        onClick={() => resetGameCount(game.id)}
-                        className="text-zinc-500 hover:text-red-400 transition-colors p-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <button onClick={() => { setMatchedTrack(null); setShowTrackConfirm(false); }} className="text-zinc-500 hover:text-zinc-300">✕</button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Seen */}
-                      <div className="bg-zinc-950 rounded-lg p-2 flex items-center justify-between border border-zinc-800">
-                        <span className="text-xs font-medium text-zinc-400">Sett</span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => updateGameCount(setGameSeen, game.id, -1)}
-                            className="w-6 h-6 rounded bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center"
-                          >
-                            -
-                          </button>
-                          <span className="w-6 text-center font-medium text-primary-400">{seen}</span>
-                          <button
-                            onClick={() => updateGameCount(setGameSeen, game.id, 1)}
-                            className="w-6 h-6 rounded bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Harvested */}
-                      <div className="bg-zinc-950 rounded-lg p-2 flex items-center justify-between border border-zinc-800">
-                        <span className="text-xs font-medium text-zinc-400">Skutt</span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => updateGameCount(setGameHarvested, game.id, -1)}
-                            className="w-6 h-6 rounded bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center"
-                          >
-                            -
-                          </button>
-                          <span className="w-6 text-center font-medium text-emerald-400">{harvested}</span>
-                          <button
-                            onClick={() => updateGameCount(setGameHarvested, game.id, 1)}
-                            className="w-6 h-6 rounded bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
+                    {/* Map Preview */}
+                    <div className="h-[300px] rounded-lg overflow-hidden border border-zinc-800">
+                      <HuntMap
+                        tracks={[{
+                          id: matchedTrack.id,
+                          hunt_id: 'preview',
+                          name: matchedTrack.name || 'Importert spor',
+                          source: 'gpx_import',
+                          geojson: matchedTrack.geojson,
+                          statistics: matchedTrack.statistics,
+                          color: '#D4752E', // Default orange color
+                          start_time: matchedTrack.start_time,
+                          end_time: matchedTrack.end_time,
+                          created_at: new Date().toISOString()
+                        }]}
+                        initialHeight="small"
+                        showControls={true}
+                      />
                     </div>
                   </div>
-                );
-              })}
-
-            {!gameTypes.some((g) => (gameSeen[g.id] || 0) > 0 || (gameHarvested[g.id] || 0) > 0) && (
-              <div className="text-center py-8 text-zinc-500 bg-zinc-900/50 rounded-lg border border-dashed border-zinc-800">
-                <p>Ingen vilt registrert enda</p>
-                <p className="text-xs mt-1">Velg en art nedenfor for å legge til</p>
+                )}
               </div>
-            )}
-          </div>
+            </div>
 
-          <div>
-            <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">Legg til art</h3>
-            <div className="grid grid-cols-3 gap-2">
-              {gameTypes
-                .filter((g) => !((gameSeen[g.id] || 0) > 0 || (gameHarvested[g.id] || 0) > 0))
-                .map((game) => (
+            {/* Recent Hunts List */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-lg font-medium text-zinc-200">Siste turer</h3>
+                <div className="flex gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <input
+                      type="text"
+                      placeholder="Søk..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="bg-zinc-900 border border-zinc-800 rounded-lg pl-9 pr-3 py-1.5 text-sm w-40 focus:w-60 transition-all focus:border-primary-500 focus:outline-none"
+                    />
+                  </div>
                   <button
-                    key={game.id}
-                    onClick={() => updateGameCount(setGameSeen, game.id, 1)}
-                    className="p-3 bg-zinc-900 hover:bg-primary-500/10 hover:text-primary-400 rounded-lg text-sm font-medium transition-colors border border-zinc-800 hover:border-primary-500/20 text-left"
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`p-1.5 rounded-lg border ${showFilters ? 'bg-primary-500/10 border-primary-500/30 text-primary-400' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'}`}
                   >
-                    + {game.name}
+                    <Filter className="w-4 h-4" />
                   </button>
-                ))}
+                </div>
+              </div>
+
+              {/* Filters Panel */}
+              {showFilters && (
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-3 grid grid-cols-3 gap-2 animate-slide-down">
+                  <select value={filterGame} onChange={(e) => setFilterGame(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-sm text-zinc-300">
+                    <option value="">Alle arter</option>
+                    {gameTypes.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                  </select>
+                  <select value={filterLocation} onChange={(e) => setFilterLocation(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-sm text-zinc-300">
+                    <option value="">Alle steder</option>
+                    {recentLocations.map(l => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                  <select value={filterDog} onChange={(e) => setFilterDog(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-sm text-zinc-300">
+                    <option value="">Alle hunder</option>
+                    {activeDogs.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {isLoading ? (
+                  <>
+                    <HuntCardSkeleton />
+                    <HuntCardSkeleton />
+                  </>
+                ) : filteredHunts.length === 0 ? (
+                  <div className="card p-12 text-center border-dashed border-zinc-800">
+                    <MapPin className="w-12 h-12 mx-auto text-zinc-700 mb-4" />
+                    <p className="text-zinc-500">Ingen turer funnet.</p>
+                  </div>
+                ) : (
+                  filteredHunts.map((hunt: Hunt) => (
+                    <motion.div
+                      layout
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+                      key={hunt.id}
+                      onClick={() => navigate(`/hunt/${hunt.id}`)}
+                      className="card hover:border-primary-500/30 hover:bg-zinc-900/80 transition-all cursor-pointer group"
+                    >
+                      <div className="p-5">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="font-semibold text-zinc-100 group-hover:text-primary-400 transition-colors">{hunt.title}</h3>
+                            <div className="flex items-center gap-2 text-xs text-zinc-500 mt-1">
+                              <Calendar className="w-3 h-3" />
+                              <span>{format(new Date(hunt.date), 'dd.MM.yyyy')}</span>
+                              <span>•</span>
+                              <MapPin className="w-3 h-3" />
+                              <span>{hunt.location.name}</span>
+                            </div>
+                          </div>
+                          {hunt.photos && hunt.photos.length > 0 && (
+                            <div className="bg-zinc-800/50 p-1.5 rounded-md">
+                              <ImageIcon className="w-4 h-4 text-zinc-400" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Stats Row */}
+                        <div className="flex items-center gap-4 pt-3 border-t border-zinc-800/50">
+                          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                            <Dog className="w-3.5 h-3.5" />
+                            <span>{hunt.dogs.length} hund{hunt.dogs.length !== 1 ? 'er' : ''}</span>
+                          </div>
+                          {(hunt.game_seen.length > 0 || hunt.game_harvested.length > 0) && (
+                            <>
+                              <div className="w-px h-3 bg-zinc-800" />
+                              <div className="flex gap-3 text-xs">
+                                {hunt.game_seen.length > 0 && (
+                                  <span className="text-primary-400 font-medium">
+                                    {hunt.game_seen.reduce((a, g) => a + g.count, 0)} sett
+                                  </span>
+                                )}
+                                {hunt.game_harvested.length > 0 && (
+                                  <span className="text-emerald-400 font-medium">
+                                    {hunt.game_harvested.reduce((a, g) => a + g.count, 0)} Skutt
+                                  </span>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-zinc-800">
-            <button
-              onClick={() => setShowGameModal(false)}
-              className="w-full btn-primary py-3"
-            >
-              Ferdig
-            </button>
+          {/* Right Column: Stats & Info */}
+          <div className="space-y-6">
+
+            {/* Season Stats Card */}
+            <TiltCard className="card bg-gradient-to-br from-zinc-900 to-zinc-900/50 border-zinc-800 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="p-5 relative">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-semibold text-zinc-100 flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-amber-500" /> Sesong {selectedSeason}
+                  </h3>
+                  <div className="flex gap-1">
+                    <button onClick={() => navigateSeason('next')} disabled={availableSeasons.indexOf(selectedSeason) === 0} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4 rotate-180" /></button>
+                    <button onClick={() => navigateSeason('prev')} disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 text-center mb-6">
+                  <div className="p-3 bg-zinc-800/30 rounded-lg backdrop-blur-sm">
+                    <div className="text-2xl font-bold text-white">{seasonStats.total_hunts}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Turer</div>
+                  </div>
+                  <div className="p-3 bg-zinc-800/30 rounded-lg backdrop-blur-sm">
+                    <div className="text-2xl font-bold text-primary-400">{seasonStats.total_seen}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Sett</div>
+                  </div>
+                  <div className="p-3 bg-zinc-800/30 rounded-lg backdrop-blur-sm">
+                    <div className="text-2xl font-bold text-emerald-400">{seasonStats.total_harvested}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Skutt</div>
+                  </div>
+                </div>
+
+                <div className="border-t border-zinc-800/50 pt-4">
+                  <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2 pl-1">Aktivitet</h4>
+                  <SeasonStatsChart hunts={filteredHunts} season={selectedSeason} />
+                </div>
+
+                <button onClick={() => navigate('/statistics')} className="w-full mt-4 btn-outline text-xs py-2">
+                  Se full statistikk
+                </button>
+              </div>
+            </TiltCard>
+
+
+
           </div>
         </div>
-      </Modal>
 
-      {/* Garmin Login Modal */}
-      <GarminLoginModal
-        isOpen={showGarminLogin}
-        onClose={() => setShowGarminLogin(false)}
-        onSuccess={() => handleGarminSync()}
-      />
-    </motion.div >
+        {/* Game modal */}
+        <Modal
+          isOpen={showGameModal}
+          onClose={() => setShowGameModal(false)}
+          title="Vilt observert og Skutt"
+          size="lg"
+        >
+          <div className="space-y-6">
+            <div className="space-y-3">
+              {gameTypes
+                .filter((g) => (gameSeen[g.id] || 0) > 0 || (gameHarvested[g.id] || 0) > 0)
+                .map((game) => {
+                  const seen = gameSeen[game.id] || 0;
+                  const harvested = gameHarvested[game.id] || 0;
+                  return (
+                    <div key={game.id} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-medium text-zinc-100">{game.name}</span>
+                        <button
+                          onClick={() => resetGameCount(game.id)}
+                          className="text-zinc-500 hover:text-red-400 transition-colors p-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Seen */}
+                        <div className="bg-zinc-950 rounded-lg p-2 flex items-center justify-between border border-zinc-800">
+                          <span className="text-xs font-medium text-zinc-400">Sett</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => updateGameCount(setGameSeen, game.id, -1)}
+                              className="w-6 h-6 rounded bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center"
+                            >
+                              -
+                            </button>
+                            <span className="w-6 text-center font-medium text-primary-400">{seen}</span>
+                            <button
+                              onClick={() => updateGameCount(setGameSeen, game.id, 1)}
+                              className="w-6 h-6 rounded bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Harvested */}
+                        <div className="bg-zinc-950 rounded-lg p-2 flex items-center justify-between border border-zinc-800">
+                          <span className="text-xs font-medium text-zinc-400">Skutt</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => updateGameCount(setGameHarvested, game.id, -1)}
+                              className="w-6 h-6 rounded bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center"
+                            >
+                              -
+                            </button>
+                            <span className="w-6 text-center font-medium text-emerald-400">{harvested}</span>
+                            <button
+                              onClick={() => updateGameCount(setGameHarvested, game.id, 1)}
+                              className="w-6 h-6 rounded bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {!gameTypes.some((g) => (gameSeen[g.id] || 0) > 0 || (gameHarvested[g.id] || 0) > 0) && (
+                <div className="text-center py-8 text-zinc-500 bg-zinc-900/50 rounded-lg border border-dashed border-zinc-800">
+                  <p>Ingen vilt registrert enda</p>
+                  <p className="text-xs mt-1">Velg en art nedenfor for å legge til</p>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">Legg til art</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {gameTypes
+                  .filter((g) => !((gameSeen[g.id] || 0) > 0 || (gameHarvested[g.id] || 0) > 0))
+                  .map((game) => (
+                    <button
+                      key={game.id}
+                      onClick={() => updateGameCount(setGameSeen, game.id, 1)}
+                      className="p-3 bg-zinc-900 hover:bg-primary-500/10 hover:text-primary-400 rounded-lg text-sm font-medium transition-colors border border-zinc-800 hover:border-primary-500/20 text-left"
+                    >
+                      + {game.name}
+                    </button>
+                  ))}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-zinc-800">
+              <button
+                onClick={() => setShowGameModal(false)}
+                className="w-full btn-primary py-3"
+              >
+                Ferdig
+              </button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Garmin Login Modal */}
+        <GarminLoginModal
+          isOpen={showGarminLogin}
+          onClose={() => setShowGarminLogin(false)}
+          onSuccess={() => handleGarminSync()}
+        />
+      </div>
+    </motion.div>
   );
 }

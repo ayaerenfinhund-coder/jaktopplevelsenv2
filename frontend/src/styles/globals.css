@@ -34,15 +34,7 @@
     @apply font-sans;
     background-color: #09090b !important;
     color: #fafafa !important;
-    background-image:
-      radial-gradient(at 0% 0%, rgba(29, 108, 69, 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(249, 115, 22, 0.08) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(29, 108, 69, 0.15) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(249, 115, 22, 0.08) 0px, transparent 50%);
-    background-attachment: fixed;
-    background-size: 100% 100%;
     cursor: auto;
-    /* Disable any custom cursor effects */
 
     /* Mobile scroll optimization */
     -webkit-overflow-scrolling: touch;
@@ -56,7 +48,7 @@
 
   /* Vercel-style scrollbar */
   ::-webkit-scrollbar {
-    @apply w-2 h-2;
+    @apply w-1.5 h-1.5;
   }
 
   ::-webkit-scrollbar-track {
@@ -65,7 +57,7 @@
 
   ::-webkit-scrollbar-thumb {
     @apply bg-zinc-700 rounded-full;
-    transition: background-color 0.2s;
+    transition: background-color 0.15s;
   }
 
   ::-webkit-scrollbar-thumb:hover {
@@ -87,7 +79,7 @@
 
   /* Vercel-style Button System */
   .btn {
-    @apply inline-flex items-center justify-center font-medium rounded-lg transition-all duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none active:scale-[0.97];
+    @apply inline-flex items-center justify-center font-medium rounded-lg transition-colors duration-100 ease-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none;
     letter-spacing: -0.01em;
   }
 
@@ -151,11 +143,11 @@
 
   /* Vercel-style Cards - Sharp, defined */
   .card {
-    @apply bg-zinc-900/40 backdrop-blur-md rounded-xl border border-zinc-800/50 shadow-lg shadow-black/10 transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700/50 hover:shadow-xl hover:shadow-primary-900/5;
+    @apply bg-zinc-900 rounded-xl border border-zinc-800 transition-colors duration-100 hover:bg-zinc-900/80 hover:border-zinc-700;
   }
 
   .card-hover {
-    @apply card hover:-translate-y-1;
+    @apply card;
   }
 
   .card-header {
@@ -167,7 +159,7 @@
   }
 
   .card-footer {
-    @apply px-5 py-4 border-t border-zinc-800 bg-zinc-900/30;
+    @apply px-5 py-4 border-t border-zinc-800 bg-zinc-950/50;
   }
 
   /* Sharp, professional form inputs */
@@ -191,12 +183,39 @@
     @apply mt-1.5 text-xs text-red-400 flex items-center gap-1;
   }
 
-  /* Select dropdown */
+  /* Premium Select dropdown */
   .select {
-    @apply input appearance-none bg-no-repeat bg-right pr-10;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2371717a' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    @apply w-full px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 appearance-none bg-no-repeat cursor-pointer;
+    @apply hover:border-zinc-700 focus:border-zinc-600 focus:ring-1 focus:ring-zinc-700 transition-colors duration-100 outline-none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2352525b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
     background-position: right 0.75rem center;
-    background-size: 1.25rem;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+  }
+
+  .select option {
+    @apply bg-zinc-950 text-zinc-100 py-2;
+  }
+
+  /* Premium Dropdown Menu */
+  .dropdown-menu {
+    @apply bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl shadow-black/50 overflow-hidden;
+  }
+
+  .dropdown-header {
+    @apply px-4 py-3 border-b border-zinc-800/80;
+  }
+
+  .dropdown-item {
+    @apply flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-900 hover:text-white transition-colors duration-75 cursor-pointer;
+  }
+
+  .dropdown-item-danger {
+    @apply dropdown-item text-red-400 hover:text-red-300 hover:bg-red-950/30;
+  }
+
+  .dropdown-separator {
+    @apply h-px bg-zinc-800/80 my-1;
   }
 
   /* Checkbox */

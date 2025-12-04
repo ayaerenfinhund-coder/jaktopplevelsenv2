@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ArrowLeft, TrendingUp, Calendar, MapPin, Target, Eye, Award, BarChart3 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Calendar, MapPin, Target, Eye, Award, BarChart3, Dog } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDogs, useHunts } from '../hooks/useApi';
+import CustomSelect from '../components/common/CustomSelect';
 
 export default function Statistics() {
     const navigate = useNavigate();
@@ -147,31 +148,35 @@ export default function Statistics() {
                     {/* Year selector */}
                     <div className="flex-1 min-w-[200px]">
                         <label className="input-label">Sesong</label>
-                        <select
-                            value={selectedYear}
-                            onChange={(e) => setSelectedYear(Number(e.target.value))}
-                            className="select"
-                        >
-                            {availableYears.map(year => (
-                                <option key={year} value={year}>{year}</option>
-                            ))}
-                        </select>
+                        <CustomSelect
+                            value={selectedYear.toString()}
+                            onChange={(val) => setSelectedYear(Number(val))}
+                            options={availableYears.map(year => ({
+                                value: year.toString(),
+                                label: year.toString(),
+                                icon: <Calendar className="w-4 h-4 text-primary-400" />
+                            }))}
+                            placeholder="Velg år"
+                        />
                     </div>
 
                     {/* Dog selector */}
                     {activeDogs.length > 0 && (
                         <div className="flex-1 min-w-[200px]">
                             <label className="input-label">Hund</label>
-                            <select
+                            <CustomSelect
                                 value={selectedDog}
-                                onChange={(e) => setSelectedDog(e.target.value)}
-                                className="select"
-                            >
-                                <option value="all">Alle hunder</option>
-                                {activeDogs.map(dog => (
-                                    <option key={dog.id} value={dog.id}>{dog.name}</option>
-                                ))}
-                            </select>
+                                onChange={setSelectedDog}
+                                options={[
+                                    { value: 'all', label: 'Alle hunder' },
+                                    ...activeDogs.map(dog => ({
+                                        value: dog.id,
+                                        label: dog.name,
+                                        icon: <Dog className="w-4 h-4 text-primary-400" />
+                                    }))
+                                ]}
+                                placeholder="Velg hund"
+                            />
                         </div>
                     )}
                 </div>

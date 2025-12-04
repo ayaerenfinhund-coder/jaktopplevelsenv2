@@ -34,7 +34,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 h-14 bg-zinc-900/60 backdrop-blur-xl border-b border-zinc-800/50 z-40 supports-[backdrop-filter]:bg-zinc-900/60">
+      <nav className="fixed top-0 left-0 right-0 h-14 bg-zinc-900 border-b border-zinc-800 z-40">
         <div className="flex items-center justify-between h-full px-4 sm:px-6 lg:px-8">
           {/* Left section */}
           <div className="flex items-center gap-4">
@@ -81,9 +81,9 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           <div className="hidden md:flex flex-1 max-w-xl mx-8">
             <button
               onClick={() => setSearchOpen(true)}
-              className="w-full flex items-center gap-3 px-4 py-2.5 bg-zinc-900/50 border border-zinc-800/50 rounded-lg text-text-muted hover:border-primary-700/50 hover:bg-zinc-900/80 transition-all duration-200 group"
+              className="w-full flex items-center gap-3 px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-text-muted hover:border-zinc-600 hover:bg-zinc-800/80 transition-colors duration-100 group"
             >
-              <Search className="w-5 h-5 group-hover:text-primary-500 transition-colors" />
+              <Search className="w-5 h-5 group-hover:text-zinc-300 transition-colors" />
               <span className="group-hover:text-zinc-300 transition-colors">Søk etter jaktturer, hunder, steder...</span>
             </button>
           </div>
@@ -103,7 +103,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className={`btn-ghost btn-icon ${user?.photoURL ? 'p-0 rounded-full overflow-hidden w-9 h-9' : ''}`}
+                className={`btn-ghost btn-icon ${user?.photoURL ? 'p-0 rounded-full overflow-hidden w-10 h-10' : ''}`}
                 aria-label="Brukermeny"
               >
                 {user?.photoURL ? (
@@ -126,31 +126,53 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                     onClick={() => setShowUserMenu(false)}
                   />
 
-                  <div className="absolute right-0 mt-2 w-56 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl z-50 overflow-hidden animate-slide-down">
-                    {user?.email && (
-                      <div className="px-4 py-3 border-b border-zinc-800">
-                        <p className="text-sm text-zinc-400">Logget inn som</p>
-                        <p className="text-sm font-medium truncate">{user.email}</p>
+                  <div className="absolute right-0 mt-2 w-64 dropdown-menu z-50 animate-slide-down">
+                    {user && (
+                      <div className="dropdown-header">
+                        <div className="flex items-center gap-3">
+                          {user.photoURL ? (
+                            <img
+                              src={user.photoURL}
+                              alt="Profil"
+                              className="w-10 h-10 rounded-full object-cover border border-zinc-700"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+                              <User className="w-5 h-5 text-zinc-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate">
+                              {user.displayName || 'Bruker'}
+                            </p>
+                            <p className="text-xs text-zinc-500 truncate">
+                              {user.email}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     )}
-                    <Link
-                      to="/settings"
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-zinc-800 transition-colors"
-                    >
-                      <Settings className="w-4 h-4" />
-                      Innstillinger
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        handleLogout();
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-zinc-800 transition-colors"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Logg ut
-                    </button>
+                    <div className="py-1">
+                      <Link
+                        to="/settings"
+                        onClick={() => setShowUserMenu(false)}
+                        className="dropdown-item"
+                      >
+                        <Settings className="w-4 h-4 text-zinc-400" />
+                        Innstillinger
+                      </Link>
+                      <div className="dropdown-separator" />
+                      <button
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          handleLogout();
+                        }}
+                        className="w-full dropdown-item-danger"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logg ut
+                      </button>
+                    </div>
                   </div>
                 </>
               )}

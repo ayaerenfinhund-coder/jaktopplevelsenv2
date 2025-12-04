@@ -53,29 +53,16 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-4 relative overflow-hidden selection:bg-primary-500/30">
+    <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4 relative overflow-hidden selection:bg-primary-500/30">
 
-      {/* Tactical Dot Pattern */}
-      <div
-        className="absolute inset-0 z-0 opacity-[0.07]"
-        style={{
-          backgroundImage: `radial-gradient(#22c55e 1px, transparent 1px)`,
-          backgroundSize: '40px 40px'
-        }}
-      />
-
-      {/* Ambient Forest Glow (Bottom) */}
-      <div className="absolute bottom-0 left-0 right-0 h-[500px] bg-gradient-to-t from-primary-900/10 to-transparent pointer-events-none z-0" />
-
-      <div className="w-full max-w-[400px] bg-zinc-900/40 border border-white/5 rounded-2xl p-8 shadow-2xl backdrop-blur-md relative z-20">
+      <div className="w-full max-w-[400px] bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl relative z-20">
         {/* Logo & Title */}
         <div className="flex flex-col items-center mb-10">
-          <div className="w-24 h-24 bg-primary-900/20 rounded-2xl flex items-center justify-center mb-6 border border-primary-500/10 shadow-lg shadow-primary-900/10 group relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-tr from-primary-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="w-24 h-24 bg-zinc-800 rounded-2xl flex items-center justify-center mb-6 border border-zinc-700">
             <img
               src="/logo.png"
               alt="Logo"
-              className="w-14 h-14 object-contain relative z-10 opacity-80 group-hover:opacity-100 transition-opacity"
+              className="w-14 h-14 object-contain"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
@@ -84,7 +71,7 @@ export default function Login() {
             />
             <svg
               viewBox="0 0 24 24"
-              className="hidden w-12 h-12 text-primary-400 relative z-10"
+              className="hidden w-12 h-12 text-primary-400"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"

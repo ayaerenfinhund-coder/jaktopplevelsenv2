@@ -203,12 +203,25 @@ class ApiClient {
                         if (metadataTime) startTime = metadataTime;
                     }
 
+
+                    // Ensure we have a LineString geometry for the map
+                    let geometry = trackFeature.geometry;
+
+                    // Flatten MultiLineString to LineString for compatibility
+                    if (geometry.type === 'MultiLineString') {
+                        const coordinates = (geometry.coordinates as any[]).flat();
+                        geometry = {
+                            type: 'LineString',
+                            coordinates: coordinates
+                        } as any;
+                    }
+
                     // Basic statistics calculation
-                    const stats = this.calculateTrackStats(trackFeature);
+                    const stats = this.calculateTrackStats(geometry);
 
                     resolve({
                         name: file.name.replace('.gpx', ''),
-                        geojson, // Keep all features (waypoints etc) for map
+                        geojson: geometry, // Send geometry directly, not FeatureCollection
                         statistics: stats,
                         start_time: startTime,
                         source: 'manual_upload'
@@ -223,15 +236,15 @@ class ApiClient {
         });
     }
 
-    private calculateTrackStats(feature: any) {
+    private calculateTrackStats(geometry: any) {
         // Simple client-side stats calculation
         // This is a simplified version. Real distance calc requires Haversine formula.
         let distance = 0;
-        const coords = feature.geometry.coordinates || [];
+        const coords = geometry.coordinates || [];
 
         // Handle MultiLineString if necessary (flatten or iterate)
         // For now assuming LineString as per toGeoJSON output for simple tracks
-        if (feature.geometry.type === 'LineString') {
+        if (geometry.type === 'LineString') {
             for (let i = 1; i < coords.length; i++) {
                 const [lon1, lat1] = coords[i - 1];
                 const [lon2, lat2] = coords[i];

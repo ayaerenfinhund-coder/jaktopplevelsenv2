@@ -4,7 +4,6 @@ import {
   Dog,
   Calendar,
   BarChart3,
-  Download,
   X,
   Camera,
   Plus,
@@ -14,7 +13,6 @@ import { clsx } from 'clsx';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useAppStore } from '../../store/useAppStore';
-import { apiClient } from '../../services/apiClient';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 interface SidebarProps {
@@ -65,30 +63,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     onClose();
   };
 
-  const handleExport = async () => {
-    try {
-      toast.loading('Eksporterer data...', { id: 'export' });
-
-      // Get actual data from API
-      const blob = await apiClient.exportData('json');
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `jaktopplevelsen-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      toast.success('Data eksportert!', { id: 'export' });
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Kunne ikke eksportere data', { id: 'export' });
-    }
-  };
-
   const handleInstallApp = async () => {
     const success = await promptInstall();
     if (success) {
@@ -112,10 +86,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         onClick={onClose}
       />
 
-      {/* Sidebar - smoother transition */}
+      {/* Sidebar - clean transition */}
       <aside
         className={clsx(
-          'fixed top-0 left-0 bottom-0 w-64 bg-zinc-900/95 backdrop-blur-xl border-r border-zinc-800/50 z-50 transform transition-all duration-500 ease-out lg:translate-x-0 lg:top-14 lg:z-30',
+          'fixed top-0 left-0 bottom-0 w-64 bg-zinc-900 border-r border-zinc-800 z-50 transform transition-transform duration-200 ease-out lg:translate-x-0 lg:top-14 lg:z-30',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         style={{
@@ -142,7 +116,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div className="p-3">
             <button
               onClick={handleNewHunt}
-              className="w-full btn-primary btn-md flex items-center justify-center gap-2"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-primary-400 border border-zinc-700 rounded-lg hover:bg-zinc-800 hover:border-zinc-600 transition-colors"
             >
               <Plus className="w-4 h-4" />
               Ny jakttur
@@ -179,7 +153,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             layoutId="active-nav"
                             className="absolute inset-0 bg-primary-500/10 border border-primary-500/20 rounded-lg"
                             initial={false}
-                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                            transition={{ duration: 0.15 }}
                           />
                         )}
                         <item.icon className="w-5 h-5 flex-shrink-0 relative z-10" />
@@ -282,16 +256,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           )}
 
-          {/* Export button */}
-          <div className="p-3 border-t border-zinc-800">
-            <button
-              onClick={handleExport}
-              className="w-full btn-outline btn-sm"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Eksporter data
-            </button>
-          </div>
+
         </div>
       </aside>
     </>
