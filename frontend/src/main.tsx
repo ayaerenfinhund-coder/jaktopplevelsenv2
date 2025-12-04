@@ -18,6 +18,13 @@ const queryClient = new QueryClient({
   },
 });
 
+// Hide splash screen when React mounts
+setTimeout(() => {
+  if (typeof window !== 'undefined' && (window as any).hideLoader) {
+    (window as any).hideLoader();
+  }
+}, 100);
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>

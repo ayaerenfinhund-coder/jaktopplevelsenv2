@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SeasonStatsChart from '../components/dashboard/SeasonStatsChart';
-import TiltCard from '../components/common/TiltCard';
 import { format } from 'date-fns';
 import { DatePicker, TimePicker } from '../components/common/CustomPickers';
 import Modal from '../components/common/Modal';
@@ -982,12 +981,10 @@ export default function Dashboard() {
           <div className="space-y-6">
 
             {/* Season Stats Card */}
-            <TiltCard className="card bg-gradient-to-br from-zinc-900 to-zinc-900/50 border-zinc-800 overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full blur-3xl pointer-events-none" />
-
-              <div className="p-5 relative">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-semibold text-zinc-100 flex items-center gap-2">
+            <div className="card border-zinc-800 overflow-hidden">
+              <div className="p-4 sm:p-5">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h3 className="font-semibold text-zinc-100 flex items-center gap-2 text-sm sm:text-base">
                     <Trophy className="w-4 h-4 text-amber-500" /> Sesong {selectedSeason}
                   </h3>
                   <div className="flex gap-1">
@@ -996,17 +993,17 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 text-center mb-6">
-                  <div className="p-3 bg-zinc-800/30 rounded-lg backdrop-blur-sm">
-                    <div className="text-2xl font-bold text-white">{seasonStats.total_hunts}</div>
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center mb-4 sm:mb-6">
+                  <div className="p-2 sm:p-3 bg-zinc-800/50 rounded-lg">
+                    <div className="text-xl sm:text-2xl font-bold text-white">{seasonStats.total_hunts}</div>
                     <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Turer</div>
                   </div>
-                  <div className="p-3 bg-zinc-800/30 rounded-lg backdrop-blur-sm">
-                    <div className="text-2xl font-bold text-primary-400">{seasonStats.total_seen}</div>
+                  <div className="p-2 sm:p-3 bg-zinc-800/50 rounded-lg">
+                    <div className="text-xl sm:text-2xl font-bold text-primary-400">{seasonStats.total_seen}</div>
                     <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Sett</div>
                   </div>
-                  <div className="p-3 bg-zinc-800/30 rounded-lg backdrop-blur-sm">
-                    <div className="text-2xl font-bold text-emerald-400">{seasonStats.total_harvested}</div>
+                  <div className="p-2 sm:p-3 bg-zinc-800/50 rounded-lg">
+                    <div className="text-xl sm:text-2xl font-bold text-emerald-400">{seasonStats.total_harvested}</div>
                     <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Skutt</div>
                   </div>
                 </div>
@@ -1020,7 +1017,7 @@ export default function Dashboard() {
                   Se full statistikk
                 </button>
               </div>
-            </TiltCard>
+            </div>
 
 
 
