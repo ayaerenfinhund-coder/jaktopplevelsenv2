@@ -14,6 +14,7 @@ import {
   Eye,
   Trash2,
   MapPin,
+  Activity,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Modal from '../components/common/Modal';
@@ -110,6 +111,7 @@ export default function NewHunt() {
   // Photos
   const [photos, setPhotos] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const gpxInputRef = useRef<HTMLInputElement>(null);
 
   // Validation
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -545,124 +547,100 @@ export default function NewHunt() {
         )}
 
         {/* Notes */}
-        <div className="mb-4">
-          <label className="text-xs text-text-muted mb-1 block">Notater</label>
+        <div>
+          <label className="input-label">Notater</label>
           <textarea
             value={quickNote}
             onChange={(e) => setQuickNote(e.target.value)}
-            placeholder="Beskriv jaktturen..."
-            className="input text-sm min-h-[120px] resize-none"
+            placeholder="Hvordan var turen?"
+            className="input text-sm min-h-[100px] resize-none"
           />
         </div>
 
-        {/* Game observations button */}
-        <button
-          onClick={() => setShowGameModal(true)}
-          className="w-full mb-4 p-3 bg-background rounded-lg flex items-center justify-between hover:bg-background-lighter transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <Target className="w-5 h-5 text-text-muted" />
-            <span className="text-sm font-medium text-text-primary">Vilt observert/Skutt</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {(totalSeen > 0 || totalHarvested > 0) ? (
-              <span className="text-sm text-primary-400 font-medium">
-                {totalSeen} sett, {totalHarvested} Skutt
+        {/* Action Bar - IDENTICAL to Hurtigregistrering */}
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-800/50">
+          <button
+            onClick={() => setShowGameModal(true)}
+            className="flex-1 btn-secondary text-xs sm:text-sm py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-14 sm:h-auto"
+            title="Registrer vilt"
+          >
+            <Target className="w-4 h-4" />
+            <span className="text-[10px] sm:text-sm leading-none sm:leading-normal">Vilt</span>
+            {(totalSeen > 0 || totalHarvested > 0) && (
+              <span className="ml-1 bg-primary-500/20 text-primary-400 text-xs px-1.5 py-0.5 rounded">
+                {totalSeen + totalHarvested}
               </span>
-            ) : (
-              <span className="text-sm text-text-muted">Legg til</span>
             )}
-            <Eye className="w-4 h-4 text-text-muted" />
-          </div>
-        </button>
+          </button>
 
-        {/* Photo upload */}
-        <div className="mb-4">
-          <label className="text-xs text-text-muted mb-1 block">Bilder</label>
-          <div className="flex flex-wrap gap-2">
-            {photos.map((photo, index) => (
-              <div key={index} className="relative w-20 h-20 rounded-lg overflow-hidden group">
-                <img
-                  src={URL.createObjectURL(photo)}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  onClick={() => removePhoto(index)}
-                  className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-20 h-20 rounded-lg bg-background border border-dashed border-text-muted/30 flex flex-col items-center justify-center text-text-muted hover:text-text-primary hover:border-text-primary transition-colors"
-            >
-              <Camera className="w-6 h-6 mb-1" />
-              <span className="text-[10px]">Legg til</span>
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handlePhotoUpload}
-              multiple
-              accept="image/*"
-              className="hidden"
-            />
-          </div>
-        </div>
-
-        {/* GPS track confirmation */}
-        {showTrackConfirm && matchedTrack && (
-          <div className="bg-success/10 border border-success/30 rounded-lg p-3 mb-4">
-            <div className="flex items-center justify-center gap-3 text-sm">
-              <CheckCircle className="w-5 h-5 text-success" />
-              <span className="font-semibold">{currentDogName}</span>
-              <span className="text-text-muted">•</span>
-              <span>{matchedTrack.distance_km} km</span>
-              <span className="text-text-muted">•</span>
-              <span>
-                {Math.round(matchedTrack.duration_minutes / 60)}t{' '}
-                {matchedTrack.duration_minutes % 60}m
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex-1 btn-secondary text-xs sm:text-sm py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-14 sm:h-auto"
+            title="Last opp bilder"
+          >
+            <Camera className="w-4 h-4" />
+            <span className="text-[10px] sm:text-sm leading-none sm:leading-normal">Bilder</span>
+            {photos.length > 0 && (
+              <span className="ml-1 bg-primary-500/20 text-primary-400 text-xs px-1.5 py-0.5 rounded">
+                {photos.length}
               </span>
-              <button
-                onClick={() => {
-                  setMatchedTrack(null);
-                  setShowTrackConfirm(false);
-                }}
-                className="text-xs text-text-muted hover:text-text-primary ml-2"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        )}
+            )}
+          </button>
 
-        {/* Action buttons */}
-        <div className="flex flex-col items-center gap-2">
-          {!matchedTrack && (
-            <div className="flex flex-col items-center w-full">
-              <button
-                onClick={() => handleGarminSync()}
-                disabled={isSyncing || !selectedDog}
-                className="w-full flex items-center justify-center gap-2 py-2 text-sm text-text-muted hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-dashed border-text-muted/30 rounded-lg mb-2"
-              >
-                <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'Synkroniserer...' : 'Synk med Garmin'}
-              </button>
-            </div>
-          )}
+          <button
+            onClick={() => gpxInputRef.current?.click()}
+            className="flex-1 btn-secondary text-xs sm:text-sm py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-14 sm:h-auto"
+            title="Last opp GPX-spor"
+          >
+            <Activity className="w-4 h-4" />
+            <span className="text-[10px] sm:text-sm leading-none sm:leading-normal">GPX</span>
+            {matchedTrack && (
+              <span className="ml-1 bg-emerald-500/20 text-emerald-400 text-xs px-1.5 py-0.5 rounded">
+                ✓
+              </span>
+            )}
+          </button>
+          <input
+            type="file"
+            ref={gpxInputRef}
+            onChange={(e) => {
+              // TODO: Add GPX upload handler
+              if (e.target.files && e.target.files[0]) {
+                toast.success('GPX-fil valgt: ' + e.target.files[0].name);
+              }
+            }}
+            accept=".gpx"
+            className="hidden"
+          />
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handlePhotoUpload}
+            multiple
+            accept="image/*"
+            className="hidden"
+          />
 
           <button
             onClick={handleSave}
-            disabled={createHuntMutation.isPending || !selectedDog || (!selectedLocation && !customLocation)}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-primary-700 hover:bg-primary-600 rounded-lg text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-700/20"
+            disabled={createHuntMutation.isPending}
+            className="flex-[1.5] btn-primary text-xs sm:text-sm py-2.5 flex items-center justify-center gap-2 shadow-lg shadow-primary-900/20"
           >
             <Send className="w-4 h-4" />
-            {createHuntMutation.isPending ? 'Lagrer...' : 'Lagre jakttur'}
+            {createHuntMutation.isPending ? 'Lagrer...' : 'Lagre tur'}
           </button>
         </div>
+
+        {/* Track Confirmation */}
+        {showTrackConfirm && matchedTrack && (
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 flex items-center justify-between text-sm mt-4">
+            <div className="flex items-center gap-2 text-emerald-400">
+              <CheckCircle className="w-4 h-4" />
+              <span>Spor lagt til: {matchedTrack.distance_km} km</span>
+            </div>
+            <button onClick={() => { setMatchedTrack(null); setShowTrackConfirm(false); }} className="text-zinc-500 hover:text-zinc-300">✕</button>
+          </div>
+        )}
       </div>
 
       {/* Game modal */}

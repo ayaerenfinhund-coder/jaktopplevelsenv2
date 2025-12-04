@@ -521,14 +521,36 @@ export default function Dashboard() {
     new Set(hunts.map((h: Hunt) => getHuntingSeason(h.date)))
   ).sort().reverse();
 
+  // Ensure selectedSeason is valid - if not in list, use first available
+  useEffect(() => {
+    if (availableSeasons.length > 0 && !availableSeasons.includes(selectedSeason)) {
+      setSelectedSeason(availableSeasons[0]);
+    }
+  }, [availableSeasons, selectedSeason]);
+
   const navigateSeason = (direction: 'prev' | 'next') => {
     const currentIndex = availableSeasons.indexOf(selectedSeason);
-    if (direction === 'prev' && currentIndex < availableSeasons.length - 1) {
-      setSelectedSeason(availableSeasons[currentIndex + 1]);
-    } else if (direction === 'next' && currentIndex > 0) {
-      setSelectedSeason(availableSeasons[currentIndex - 1]);
+    if (currentIndex === -1) return; // Safety check
+
+    if (direction === 'prev') {
+      // Go to older season (higher index in reversed array)
+      const newIndex = currentIndex + 1;
+      if (newIndex < availableSeasons.length) {
+        setSelectedSeason(availableSeasons[newIndex]);
+      }
+    } else {
+      // Go to newer season (lower index in reversed array)  
+      const newIndex = currentIndex - 1;
+      if (newIndex >= 0) {
+        setSelectedSeason(availableSeasons[newIndex]);
+      }
     }
   };
+
+  // Check if navigation buttons should be disabled
+  const currentSeasonIndex = availableSeasons.indexOf(selectedSeason);
+  const canGoPrev = currentSeasonIndex !== -1 && currentSeasonIndex < availableSeasons.length - 1;
+  const canGoNext = currentSeasonIndex !== -1 && currentSeasonIndex > 0;
 
   // Calculate season stats
   const seasonStats = {
@@ -988,8 +1010,8 @@ export default function Dashboard() {
                     <Trophy className="w-4 h-4 text-amber-500" /> Sesong {selectedSeason}
                   </h3>
                   <div className="flex gap-1">
-                    <button onClick={() => navigateSeason('prev')} disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4 rotate-180" /></button>
-                    <button onClick={() => navigateSeason('next')} disabled={availableSeasons.indexOf(selectedSeason) === 0} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
+                    <button onClick={() => navigateSeason('prev')} disabled={!canGoPrev} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4 rotate-180" /></button>
+                    <button onClick={() => navigateSeason('next')} disabled={!canGoNext} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
                   </div>
                 </div>
 
