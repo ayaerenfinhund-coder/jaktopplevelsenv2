@@ -988,8 +988,8 @@ export default function Dashboard() {
                     <Trophy className="w-4 h-4 text-amber-500" /> Sesong {selectedSeason}
                   </h3>
                   <div className="flex gap-1">
-                    <button onClick={() => navigateSeason('next')} disabled={availableSeasons.indexOf(selectedSeason) === 0} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4 rotate-180" /></button>
-                    <button onClick={() => navigateSeason('prev')} disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
+                    <button onClick={() => navigateSeason('prev')} disabled={availableSeasons.indexOf(selectedSeason) === availableSeasons.length - 1} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4 rotate-180" /></button>
+                    <button onClick={() => navigateSeason('next')} disabled={availableSeasons.indexOf(selectedSeason) === 0} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
                   </div>
                 </div>
 

@@ -13,10 +13,13 @@ import {
   Target,
   Eye,
   Trash2,
+  MapPin,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Modal from '../components/common/Modal';
 import GarminLoginModal from '../components/common/GarminLoginModal';
+import CustomSelect from '../components/common/CustomSelect';
+import { DatePicker, TimePicker } from '../components/common/CustomPickers';
 import toast from 'react-hot-toast';
 import { fetchWeatherFromYr } from '../services/weatherService';
 import { apiClient } from '../services/apiClient';
@@ -404,30 +407,23 @@ export default function NewHunt() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
           <div>
             <label className="text-xs text-text-muted mb-1 block">Dato</label>
-            <input
-              type="date"
-              value={huntDate.toISOString().split('T')[0]}
-              max={new Date().toISOString().split('T')[0]}
-              onChange={(e) => setHuntDate(new Date(e.target.value))}
-              className="input text-sm"
+            <DatePicker
+              selected={huntDate}
+              onChange={setHuntDate}
             />
           </div>
           <div>
             <label className="text-xs text-text-muted mb-1 block">Starttid</label>
-            <input
-              type="time"
+            <TimePicker
               value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="input text-sm"
+              onChange={setStartTime}
             />
           </div>
           <div>
             <label className="text-xs text-text-muted mb-1 block">Sluttid</label>
-            <input
-              type="time"
+            <TimePicker
               value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="input text-sm"
+              onChange={setEndTime}
             />
           </div>
         </div>
@@ -438,10 +434,10 @@ export default function NewHunt() {
             <label className="text-xs text-text-muted mb-1 block">
               Hund {!selectedDog && <span className="text-error">*</span>}
             </label>
-            <select
+            <CustomSelect
               value={selectedDog}
-              onChange={(e) => {
-                setSelectedDog(e.target.value);
+              onChange={(val) => {
+                setSelectedDog(val);
                 if (validationErrors.dog) {
                   setValidationErrors((prev) => {
                     const { dog, ...rest } = prev;
@@ -449,15 +445,17 @@ export default function NewHunt() {
                   });
                 }
               }}
-              className={`select text-sm ${validationErrors.dog ? 'border-error ring-1 ring-error' : ''}`}
-            >
-              <option value="">Velg</option>
-              {activeDogs.map((dog) => (
-                <option key={dog.id} value={dog.id}>
-                  {dog.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'Velg hund' },
+                ...activeDogs.map((dog) => ({
+                  value: dog.id,
+                  label: dog.name,
+                  icon: <Dog className="w-4 h-4 text-primary-400" />
+                }))
+              ]}
+              placeholder="Velg hund"
+              error={!!validationErrors.dog}
+            />
             {validationErrors.dog && (
               <p className="text-xs text-error mt-1">{validationErrors.dog}</p>
             )}
@@ -496,14 +494,14 @@ export default function NewHunt() {
                 </button>
               </div>
             ) : (
-              <select
+              <CustomSelect
                 value={selectedLocation}
-                onChange={(e) => {
-                  if (e.target.value === '_custom') {
+                onChange={(val) => {
+                  if (val === '_custom') {
                     setSelectedLocation('_custom');
                     setCustomLocation('');
                   } else {
-                    setSelectedLocation(e.target.value);
+                    setSelectedLocation(val);
                   }
                   if (validationErrors.location) {
                     setValidationErrors((prev) => {
@@ -512,16 +510,18 @@ export default function NewHunt() {
                     });
                   }
                 }}
-                className={`select text-sm ${validationErrors.location ? 'border-error ring-1 ring-error' : ''}`}
-              >
-                <option value="">Velg</option>
-                {recentLocations.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
-                  </option>
-                ))}
-                <option value="_custom">+ Nytt sted</option>
-              </select>
+                options={[
+                  { value: '', label: 'Velg sted' },
+                  ...recentLocations.map((loc) => ({
+                    value: loc,
+                    label: loc,
+                    icon: <MapPin className="w-4 h-4 text-primary-400" />
+                  })),
+                  { value: '_custom', label: '+ Nytt sted' }
+                ]}
+                placeholder="Velg sted"
+                error={!!validationErrors.location}
+              />
             )}
             {validationErrors.location && (
               <p className="text-xs text-error mt-1">{validationErrors.location}</p>
