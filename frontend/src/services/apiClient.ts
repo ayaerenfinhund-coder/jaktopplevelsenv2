@@ -178,53 +178,130 @@ class ApiClient {
                     const gpx = parser.parseFromString(gpxString, "text/xml");
                     const geojson = toGeoJSON.gpx(gpx);
 
-                    // Find the first LineString feature (track or route)
+                    // Collect all coordinates from various GPX elements
+                    let allCoordinates: [number, number, number?][] = [];
+                    let startTime = new Date().toISOString();
+                    let name = file.name.replace('.gpx', '');
+
+                    // 1. First try to find LineString features (from trk or rte)
                     const trackFeature = geojson.features?.find(f =>
                         f.geometry.type === 'LineString' || f.geometry.type === 'MultiLineString'
                     );
 
-                    if (!trackFeature) {
-                        throw new Error('Ingen spor (track/route) funnet i GPX-filen.');
+                    if (trackFeature) {
+                        // Use existing track/route
+                        const geometry = trackFeature.geometry as any;
+
+                        // Flatten MultiLineString to LineString
+                        if (geometry.type === 'MultiLineString') {
+                            allCoordinates = (geometry.coordinates as any[]).flat();
+                        } else {
+                            allCoordinates = geometry.coordinates as [number, number, number?][];
+                        }
+
+                        // Extract name and time from properties
+                        const properties = trackFeature.properties || {};
+                        if (properties.name) name = properties.name;
+                        if (properties.coordTimes?.[0]) {
+                            startTime = properties.coordTimes[0];
+                        } else if (properties.time) {
+                            startTime = properties.time;
+                        }
                     }
 
-                    // Try to extract start time from GPX
-                    let startTime = new Date().toISOString();
+                    // 2. If no LineString, try Point features (waypoints)
+                    if (allCoordinates.length === 0) {
+                        const pointFeatures = geojson.features?.filter(f =>
+                            f.geometry.type === 'Point'
+                        ) || [];
 
-                    // Safe access to properties
-                    const properties = trackFeature.properties || {};
+                        if (pointFeatures.length >= 2) {
+                            // Create a LineString from waypoints
+                            allCoordinates = pointFeatures.map(f => (f.geometry as any).coordinates as [number, number, number?]);
 
-                    if (properties.coordTimes?.[0]) {
-                        startTime = properties.coordTimes[0];
-                    } else if (properties.time) {
-                        startTime = properties.time;
-                    } else {
-                        // Fallback: check metadata time
+                            // Get name from first waypoint or file
+                            const firstWpt = pointFeatures[0].properties;
+                            if (firstWpt?.name) name = `Rute: ${firstWpt.name}`;
+
+                            // Get start time from first waypoint
+                            if (firstWpt?.time) startTime = firstWpt.time;
+                        }
+                    }
+
+                    // 3. Fallback: manually parse GPX XML for any coordinates
+                    if (allCoordinates.length === 0) {
+                        // Try to extract from rte/rtept elements directly
+                        const rtepts = gpx.querySelectorAll('rtept');
+                        if (rtepts.length >= 2) {
+                            rtepts.forEach(rtept => {
+                                const lat = parseFloat(rtept.getAttribute('lat') || '0');
+                                const lon = parseFloat(rtept.getAttribute('lon') || '0');
+                                const ele = parseFloat(rtept.querySelector('ele')?.textContent || '0');
+                                if (lat && lon) allCoordinates.push([lon, lat, ele]);
+                            });
+                        }
+
+                        // Try trkpt elements
+                        if (allCoordinates.length === 0) {
+                            const trkpts = gpx.querySelectorAll('trkpt');
+                            trkpts.forEach(trkpt => {
+                                const lat = parseFloat(trkpt.getAttribute('lat') || '0');
+                                const lon = parseFloat(trkpt.getAttribute('lon') || '0');
+                                const ele = parseFloat(trkpt.querySelector('ele')?.textContent || '0');
+                                if (lat && lon) allCoordinates.push([lon, lat, ele]);
+                            });
+                        }
+
+                        // Try wpt elements  
+                        if (allCoordinates.length === 0) {
+                            const wpts = gpx.querySelectorAll('wpt');
+                            wpts.forEach(wpt => {
+                                const lat = parseFloat(wpt.getAttribute('lat') || '0');
+                                const lon = parseFloat(wpt.getAttribute('lon') || '0');
+                                const ele = parseFloat(wpt.querySelector('ele')?.textContent || '0');
+                                if (lat && lon) allCoordinates.push([lon, lat, ele]);
+                            });
+                        }
+
+                        // Get time from metadata or first element with time
                         const metadataTime = gpx.querySelector('metadata > time')?.textContent;
+                        const firstTime = gpx.querySelector('time')?.textContent;
                         if (metadataTime) startTime = metadataTime;
+                        else if (firstTime) startTime = firstTime;
+
+                        // Get route name
+                        const rteName = gpx.querySelector('rte > name')?.textContent;
+                        const trkName = gpx.querySelector('trk > name')?.textContent;
+                        if (rteName) name = rteName;
+                        else if (trkName) name = trkName;
                     }
 
-
-                    // Ensure we have a LineString geometry for the map
-                    let geometry = trackFeature.geometry;
-
-                    // Flatten MultiLineString to LineString for compatibility
-                    if (geometry.type === 'MultiLineString') {
-                        const coordinates = (geometry.coordinates as any[]).flat();
-                        geometry = {
-                            type: 'LineString',
-                            coordinates: coordinates
-                        } as any;
+                    // Validate we have enough coordinates
+                    if (allCoordinates.length < 2) {
+                        throw new Error('GPX-filen må inneholde minst 2 koordinater (spor, rute eller waypoints).');
                     }
 
-                    // Basic statistics calculation
+                    // Create the final geometry
+                    const geometry = {
+                        type: 'LineString' as const,
+                        coordinates: allCoordinates
+                    };
+
+                    // Calculate statistics
                     const stats = this.calculateTrackStats(geometry);
 
+                    console.log(`GPX parsed: ${allCoordinates.length} points, ${stats.distance_km} km`);
+
                     resolve({
-                        name: file.name.replace('.gpx', ''),
-                        geojson: geometry, // Send geometry directly, not FeatureCollection
+                        id: `gpx-${Date.now()}`,
+                        name: name,
+                        geojson: geometry,
                         statistics: stats,
                         start_time: startTime,
-                        source: 'manual_upload'
+                        source: 'gpx_import',
+                        distance_km: stats.distance_km,
+                        duration_minutes: stats.duration_minutes || 60,
+                        color: '#D4752E'
                     });
                 } catch (error) {
                     console.error('GPX upload failed:', error);
