@@ -382,6 +382,52 @@ class ApiClient {
         const data = JSON.stringify(hunts, null, 2);
         return new Blob([data], { type: 'application/json' });
     }
+
+    // Historical Weather using Open-Meteo API (free, no API key needed)
+    async getHistoricalWeather(lat: number, lon: number, date: string): Promise<any> {
+        try {
+            // Open-Meteo historical API
+            const response = await fetch(
+                `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${date}&end_date=${date}&daily=temperature_2m_mean,precipitation_sum,wind_speed_10m_max,weather_code&timezone=Europe/Oslo`
+            );
+
+            if (!response.ok) {
+                console.log('Historical weather API failed, returning null');
+                return null;
+            }
+
+            const data = await response.json();
+
+            if (!data.daily) return null;
+
+            // Map WMO weather codes to our conditions
+            const weatherCodeMap: Record<number, string> = {
+                0: 'clear',
+                1: 'clear', 2: 'partly_cloudy', 3: 'cloudy',
+                45: 'fog', 48: 'fog',
+                51: 'light_rain', 53: 'rain', 55: 'heavy_rain',
+                61: 'light_rain', 63: 'rain', 65: 'heavy_rain',
+                71: 'light_snow', 73: 'snow', 75: 'heavy_snow',
+                77: 'snow', 80: 'rain', 81: 'rain', 82: 'heavy_rain',
+                85: 'snow', 86: 'heavy_snow',
+                95: 'rain', 96: 'rain', 99: 'rain'
+            };
+
+            const weatherCode = data.daily.weather_code?.[0] || 0;
+            const conditions = weatherCodeMap[weatherCode] || 'cloudy';
+
+            return {
+                temperature: Math.round(data.daily.temperature_2m_mean?.[0] || 0),
+                conditions,
+                wind_speed: Math.round(data.daily.wind_speed_10m_max?.[0] || 0),
+                wind_direction: 'V', // Variable for daily data
+                precipitation: data.daily.precipitation_sum?.[0] || 0
+            };
+        } catch (error) {
+            console.error('Historical weather fetch failed:', error);
+            return null;
+        }
+    }
 }
 
 export const apiClient = new ApiClient();

@@ -370,11 +370,58 @@ export default function Dashboard() {
         setMatchedTrack(trackData);
         setShowTrackConfirm(true);
 
+        // Auto-fill date and time from GPX (only if user hasn't set them today)
         if (trackData.start_time) {
-          setStartTime(format(new Date(trackData.start_time), 'HH:mm'));
-          const start = new Date(trackData.start_time);
-          const end = new Date(start.getTime() + (trackData.statistics?.duration_minutes || 120) * 60000);
+          const gpxDate = new Date(trackData.start_time);
+
+          // Set date from GPX
+          setHuntDate(gpxDate);
+
+          // Set start and end time
+          setStartTime(format(gpxDate, 'HH:mm'));
+          const end = new Date(gpxDate.getTime() + (trackData.statistics?.duration_minutes || 120) * 60000);
           setEndTime(format(end, 'HH:mm'));
+
+          // Try to reverse geocode location from first coordinate
+          if (trackData.geojson?.coordinates?.length > 0) {
+            const firstCoord = trackData.geojson.coordinates[0];
+            const [lon, lat] = firstCoord;
+
+            try {
+              // Use Kartverket's stedsnavn API for Norwegian place names
+              const response = await fetch(
+                `https://ws.geonorge.no/stedsnavn/v1/punkt?lat=${lat}&lon=${lon}&koordsys=4258&radius=5000&treffPerSide=1`
+              );
+              if (response.ok) {
+                const data = await response.json();
+                if (data.navn && data.navn.length > 0) {
+                  const placeName = data.navn[0].stedsnavn?.[0]?.skrivemåte || '';
+                  if (placeName && !selectedLocation) {
+                    setCustomLocation(placeName);
+                    setSelectedLocation('_custom');
+                  }
+                }
+              }
+            } catch (geoError) {
+              console.log('Reverse geocoding failed, using GPX name:', geoError);
+              // Fallback to track name if geocoding fails
+              if (trackData.name && !selectedLocation) {
+                setCustomLocation(trackData.name.split(' - ')[0]);
+                setSelectedLocation('_custom');
+              }
+            }
+
+            // Fetch historical weather for the GPX date/location
+            try {
+              const weatherDate = format(gpxDate, 'yyyy-MM-dd');
+              const historicalWeather = await apiClient.getHistoricalWeather(lat, lon, weatherDate);
+              if (historicalWeather) {
+                setWeather(historicalWeather);
+              }
+            } catch (weatherError) {
+              console.log('Historical weather fetch failed:', weatherError);
+            }
+          }
         }
 
         toast.success('GPX-fil lastet opp!', { id: toastId });
