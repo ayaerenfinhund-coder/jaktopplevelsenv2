@@ -361,4 +361,9 @@
   .section {
     @apply py-12 sm:py-16 lg:py-20;
   }
+
+  /* Hide Leaflet attribution */
+  .leaflet-control-attribution {
+    display: none !important;
+  }
 }
