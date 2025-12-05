@@ -335,10 +335,30 @@ export default function HuntDetail() {
         <div className="flex items-center gap-3 pt-2">
           <button
             className="flex items-center gap-2 px-4 py-2.5 bg-background-light hover:bg-background-lighter rounded-lg transition-colors"
-            onClick={() => {
-              const shareUrl = `${window.location.origin}/share/${hunt.id}`;
-              navigator.clipboard.writeText(shareUrl);
-              toast.success('Delingslenke kopiert!');
+            onClick={async () => {
+              try {
+                // Create a share token with 1-hour expiry
+                const { collection, addDoc, Timestamp } = await import('firebase/firestore');
+                const { db, auth } = await import('../lib/firebase');
+
+                const user = auth.currentUser;
+                const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+                const tokenDoc = await addDoc(collection(db, 'share_tokens'), {
+                  huntId: hunt.id,
+                  authorName: user?.displayName || user?.email || 'Ukjent',
+                  authorEmail: user?.email || '',
+                  createdAt: Timestamp.now(),
+                  expiresAt: Timestamp.fromDate(expiresAt),
+                });
+
+                const shareUrl = `${window.location.origin}/share/${tokenDoc.id}`;
+                navigator.clipboard.writeText(shareUrl);
+                toast.success('Delingslenke kopiert! Utløper om 1 time.');
+              } catch (error) {
+                console.error('Error creating share link:', error);
+                toast.error('Kunne ikke opprette delingslenke');
+              }
             }}
           >
             <Share2 className="w-5 h-5" />

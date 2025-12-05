@@ -27,6 +27,8 @@ export default function PublicHuntView() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isExpired, setIsExpired] = useState(false);
+  const [authorName, setAuthorName] = useState<string>('');
 
   useEffect(() => {
     const loadSharedHunt = async () => {
@@ -38,16 +40,36 @@ export default function PublicHuntView() {
           return;
         }
 
-        // Fetch the actual hunt from Firestore using shareId
         const { doc, getDoc } = await import('firebase/firestore');
         const { db } = await import('../lib/firebase');
 
-        // The shareId is the hunt ID
-        const huntRef = doc(db, 'hunts', shareId);
+        // First, fetch the share token
+        const tokenRef = doc(db, 'share_tokens', shareId);
+        const tokenSnap = await getDoc(tokenRef);
+
+        if (!tokenSnap.exists()) {
+          setError('Delingslenken finnes ikke');
+          setIsLoading(false);
+          return;
+        }
+
+        const tokenData = tokenSnap.data();
+        const expiresAt = tokenData.expiresAt?.toDate?.() || new Date(0);
+
+        // Check if token is expired
+        if (new Date() > expiresAt) {
+          setIsExpired(true);
+          setAuthorName(tokenData.authorName || tokenData.authorEmail || 'eieren');
+          setIsLoading(false);
+          return;
+        }
+
+        // Token valid - fetch the hunt
+        const huntRef = doc(db, 'hunts', tokenData.huntId);
         const huntSnap = await getDoc(huntRef);
 
         if (!huntSnap.exists()) {
-          setError('Jakttur ikke funnet');
+          setError('Jaktturen finnes ikke lenger');
           setIsLoading(false);
           return;
         }
@@ -55,19 +77,30 @@ export default function PublicHuntView() {
         const huntData = { id: huntSnap.id, ...huntSnap.data() } as Hunt;
         setHunt(huntData);
 
-        // Fetch tracks if the hunt has any
+        // Handle tracks - check if they're embedded in the hunt or need fetching
         if (huntData.tracks && huntData.tracks.length > 0) {
-          const { collection, query, where, getDocs } = await import('firebase/firestore');
-          const tracksRef = collection(db, 'tracks');
-          const q = query(tracksRef, where('hunt_id', '==', shareId));
-          const tracksSnap = await getDocs(q);
+          const firstTrack = huntData.tracks[0];
+          if (typeof firstTrack === 'object' && firstTrack.geojson) {
+            // Tracks are embedded - parse stringified geojson
+            const parsedTracks = huntData.tracks.map((track: any) => ({
+              ...track,
+              geojson: typeof track.geojson === 'string' ? JSON.parse(track.geojson) : track.geojson,
+            })) as Track[];
+            setTracks(parsedTracks);
+          } else {
+            // Tracks are IDs - fetch from Firestore
+            const { collection, query, where, getDocs } = await import('firebase/firestore');
+            const tracksRef = collection(db, 'tracks');
+            const q = query(tracksRef, where('hunt_id', '==', tokenData.huntId));
+            const tracksSnap = await getDocs(q);
 
-          const tracksData = tracksSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          })) as Track[];
+            const tracksData = tracksSnap.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as Track[];
 
-          setTracks(tracksData);
+            setTracks(tracksData);
+          }
         }
 
         setIsLoading(false);
@@ -99,6 +132,44 @@ export default function PublicHuntView() {
   }
 
 
+
+  // Show expired link message with author info
+  if (isExpired) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="bg-background-light border-b border-background-lighter p-4">
+          <div className="max-w-4xl mx-auto flex items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="Jaktopplevelsen"
+              className="w-10 h-10 rounded-lg object-contain"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
+            />
+            <span className="text-lg font-bold text-text-primary">Jaktopplevelsen</span>
+          </div>
+        </header>
+        <div className="flex items-center justify-center p-4 mt-20">
+          <div className="text-center max-w-md">
+            <div className="w-16 h-16 bg-accent-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Clock className="w-8 h-8 text-accent-400" />
+            </div>
+            <h1 className="text-2xl font-bold text-text-primary mb-2">
+              Lenken har utløpt
+            </h1>
+            <p className="text-text-muted mb-6">
+              Denne delingslenken er ikke lenger gyldig. Be <span className="text-primary-400 font-medium">{authorName}</span> om en ny lenke.
+            </p>
+            <p className="text-xs text-text-muted">
+              Delingslenker utløper etter 1 time for sikkerhet.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (error || !hunt) {
     return (

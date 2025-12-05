@@ -184,7 +184,6 @@ function generateHeatmapData(tracks: Track[]): { lat: number; lng: number; inten
 // Kartverket WMTS - Premium Norwegian hunting maps
 const MAP_LAYERS = {
   // Kartverket Turkart - BEST for hunting/outdoor activities in Norway
-  // This is the same map used in professional outdoor apps
   turkart: {
     name: '🏔️ Turkart (Anbefalt)',
     url: 'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png',
@@ -198,54 +197,28 @@ const MAP_LAYERS = {
     attribution: '© <a href="https://kartverket.no">Kartverket</a>',
     maxZoom: 20,
   },
-  // Norgeskart Topografisk - standard topo
-  topo: {
-    name: 'Norgeskart Topo',
-    url: 'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png',
-    attribution: '© <a href="https://kartverket.no">Kartverket</a>',
-    maxZoom: 20,
-  },
-  // Norge i bilder - Official Norwegian orthophotos (best quality)
-  norgeibilder: {
-    name: '📸 Norge i Bilder',
-    url: 'https://waapi.webatlas.no/maptiles/tiles/webatlas-orto-newup/wa_grid/{z}/{x}/{y}.jpeg',
-    attribution: '© <a href="https://norgeibilder.no">Norge i bilder</a>',
-    maxZoom: 20,
-  },
   // Mapbox Satellite with streets overlay
   mapboxSatellite: {
-    name: 'Mapbox Satellitt',
+    name: 'Satellitt',
     url: `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`,
     attribution: '© <a href="https://mapbox.com">Mapbox</a>',
     maxZoom: 22,
   },
   // ESRI Flyfoto - High quality worldwide imagery
   flyfoto: {
-    name: 'Flyfoto (ESRI)',
+    name: 'Flyfoto',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: '© <a href="https://www.esri.com">Esri</a>, Maxar, Earthstar Geographics',
     maxZoom: 19,
   },
-  // OpenTopoMap as fallback
-  openTopo: {
-    name: 'OpenTopoMap',
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: '© <a href="https://opentopomap.org">OpenTopoMap</a>',
-    maxZoom: 17,
-  },
 };
 
-// WMS overlays - tilleggsinfo
+// WMS overlays - eiendomsgrenser from Kartverket
 const WMS_OVERLAYS = {
   eiendom: {
     name: 'Eiendomsgrenser',
-    url: 'https://wms.geonorge.no/skwms1/wms.matrikkelkart',
-    layers: 'matrikkelkart',
-  },
-  markslag: {
-    name: 'Markslag (skog/myr)',
-    url: 'https://wms.nibio.no/cgi-bin/ar5',
-    layers: 'Arealtype',
+    url: 'https://wms.geonorge.no/skwms1/wms.matrikkel_wms',
+    layers: 'teiggrensepunkt,teiggrense',
   },
 };
 
@@ -259,7 +232,6 @@ export default function HuntMap({
 }: HuntMapProps) {
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showPropertyBoundaries, setShowPropertyBoundaries] = useState(false);
-  const [showLandUse, setShowLandUse] = useState(false);
   const [mapHeight, setMapHeight] = useState<'small' | 'medium' | 'large'>(initialHeight);
 
   // Map tools
@@ -325,22 +297,6 @@ export default function HuntMap({
             />
           </LayersControl.BaseLayer>
 
-          <LayersControl.BaseLayer name={MAP_LAYERS.topo.name}>
-            <TileLayer
-              url={MAP_LAYERS.topo.url}
-              attribution={MAP_LAYERS.topo.attribution}
-              maxZoom={MAP_LAYERS.topo.maxZoom}
-            />
-          </LayersControl.BaseLayer>
-
-          <LayersControl.BaseLayer name={MAP_LAYERS.norgeibilder.name}>
-            <TileLayer
-              url={MAP_LAYERS.norgeibilder.url}
-              attribution={MAP_LAYERS.norgeibilder.attribution}
-              maxZoom={MAP_LAYERS.norgeibilder.maxZoom}
-            />
-          </LayersControl.BaseLayer>
-
           <LayersControl.BaseLayer name={MAP_LAYERS.mapboxSatellite.name}>
             <TileLayer
               url={MAP_LAYERS.mapboxSatellite.url}
@@ -356,14 +312,6 @@ export default function HuntMap({
               maxZoom={MAP_LAYERS.flyfoto.maxZoom}
             />
           </LayersControl.BaseLayer>
-
-          <LayersControl.BaseLayer name={MAP_LAYERS.openTopo.name}>
-            <TileLayer
-              url={MAP_LAYERS.openTopo.url}
-              attribution={MAP_LAYERS.openTopo.attribution}
-              maxZoom={MAP_LAYERS.openTopo.maxZoom}
-            />
-          </LayersControl.BaseLayer>
         </LayersControl>
 
         {/* Eiendomsgrenser WMS */}
@@ -377,16 +325,7 @@ export default function HuntMap({
           />
         )}
 
-        {/* Markslag WMS */}
-        {showLandUse && (
-          <WMSTileLayer
-            url={WMS_OVERLAYS.markslag.url}
-            layers={WMS_OVERLAYS.markslag.layers}
-            format="image/png"
-            transparent={true}
-            opacity={0.4}
-          />
-        )}
+
 
         {/* Tegn GPS-spor */}
         {tracks.map((track) => {
@@ -454,7 +393,7 @@ export default function HuntMap({
             <Circle
               key={`heat-${i}`}
               center={[point.lat, point.lng]}
-              radius={50 + point.intensity * 100}
+              radius={10 + point.intensity * 20}
               pathOptions={{
                 color: 'transparent',
                 fillColor: `hsl(${30 - point.intensity * 30}, 100%, 50%)`,
@@ -484,16 +423,7 @@ export default function HuntMap({
               onChange={(e) => setShowPropertyBoundaries(e.target.checked)}
               className="w-3 h-3"
             />
-            <span className="text-text-primary">Eiendom</span>
-          </label>
-          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showLandUse}
-              onChange={(e) => setShowLandUse(e.target.checked)}
-              className="w-3 h-3"
-            />
-            <span className="text-text-primary">Markslag</span>
+            <span className="text-text-primary">Eiendomsgrenser</span>
           </label>
         </div>
       </div>
