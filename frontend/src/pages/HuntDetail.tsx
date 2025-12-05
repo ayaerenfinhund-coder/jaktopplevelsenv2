@@ -79,7 +79,12 @@ export default function HuntDetail() {
       // Check if tracks are already objects with geojson
       const firstTrack = hunt.tracks[0];
       if (typeof firstTrack === 'object' && firstTrack.geojson) {
-        setLoadedTracks(hunt.tracks);
+        // Parse stringified geojson if stored as string
+        const parsedTracks = hunt.tracks.map((track: any) => ({
+          ...track,
+          geojson: typeof track.geojson === 'string' ? JSON.parse(track.geojson) : track.geojson,
+        }));
+        setLoadedTracks(parsedTracks);
         return;
       }
 

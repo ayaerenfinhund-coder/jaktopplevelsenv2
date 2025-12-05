@@ -452,10 +452,11 @@ export default function Dashboard() {
       })),
       dogs: [selectedDog],
       // Store full track data with geojson for map display
+      // Stringify geojson to avoid Firestore nested array limitation
       tracks: matchedTrack ? [{
         id: matchedTrack.id || `track-${Date.now()}`,
         name: matchedTrack.name || 'GPS-spor',
-        geojson: matchedTrack.geojson,
+        geojson: JSON.stringify(matchedTrack.geojson),
         statistics: matchedTrack.statistics,
         color: matchedTrack.color || '#D4752E',
         source: matchedTrack.source || 'gpx_import',
