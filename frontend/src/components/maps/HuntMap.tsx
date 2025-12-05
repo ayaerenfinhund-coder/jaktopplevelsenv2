@@ -235,17 +235,12 @@ const MAP_LAYERS = {
   },
 };
 
-// WMS overlays - tilleggsinfo
+// WMS overlays - eiendomsgrenser
 const WMS_OVERLAYS = {
   eiendom: {
     name: 'Eiendomsgrenser',
-    url: 'https://wms.geonorge.no/skwms1/wms.matrikkelkart',
-    layers: 'matrikkelkart',
-  },
-  markslag: {
-    name: 'Markslag (skog/myr)',
-    url: 'https://wms.nibio.no/cgi-bin/ar5',
-    layers: 'Arealtype',
+    url: 'https://openwms.statkart.no/skwms1/wms.matrikkelkart',
+    layers: 'Teiggrenser,Kommunegrense',
   },
 };
 
@@ -259,7 +254,6 @@ export default function HuntMap({
 }: HuntMapProps) {
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showPropertyBoundaries, setShowPropertyBoundaries] = useState(false);
-  const [showLandUse, setShowLandUse] = useState(false);
   const [mapHeight, setMapHeight] = useState<'small' | 'medium' | 'large'>(initialHeight);
 
   // Map tools
@@ -307,9 +301,9 @@ export default function HuntMap({
         zoomControl={showControls}
         attributionControl={true}
       >
-        {/* Premium Norwegian Hunting Maps - Kartverket */}
+        {/* Norwegian Hunting Maps - Kartverket */}
         <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name={MAP_LAYERS.turkart.name}>
+          <LayersControl.BaseLayer checked name="Turkart">
             <TileLayer
               url={MAP_LAYERS.turkart.url}
               attribution={MAP_LAYERS.turkart.attribution}
@@ -317,39 +311,7 @@ export default function HuntMap({
             />
           </LayersControl.BaseLayer>
 
-          <LayersControl.BaseLayer name={MAP_LAYERS.n5raster.name}>
-            <TileLayer
-              url={MAP_LAYERS.n5raster.url}
-              attribution={MAP_LAYERS.n5raster.attribution}
-              maxZoom={MAP_LAYERS.n5raster.maxZoom}
-            />
-          </LayersControl.BaseLayer>
-
-          <LayersControl.BaseLayer name={MAP_LAYERS.topo.name}>
-            <TileLayer
-              url={MAP_LAYERS.topo.url}
-              attribution={MAP_LAYERS.topo.attribution}
-              maxZoom={MAP_LAYERS.topo.maxZoom}
-            />
-          </LayersControl.BaseLayer>
-
-          <LayersControl.BaseLayer name={MAP_LAYERS.norgeibilder.name}>
-            <TileLayer
-              url={MAP_LAYERS.norgeibilder.url}
-              attribution={MAP_LAYERS.norgeibilder.attribution}
-              maxZoom={MAP_LAYERS.norgeibilder.maxZoom}
-            />
-          </LayersControl.BaseLayer>
-
-          <LayersControl.BaseLayer name={MAP_LAYERS.mapboxSatellite.name}>
-            <TileLayer
-              url={MAP_LAYERS.mapboxSatellite.url}
-              attribution={MAP_LAYERS.mapboxSatellite.attribution}
-              maxZoom={MAP_LAYERS.mapboxSatellite.maxZoom}
-            />
-          </LayersControl.BaseLayer>
-
-          <LayersControl.BaseLayer name={MAP_LAYERS.flyfoto.name}>
+          <LayersControl.BaseLayer name="Flyfoto">
             <TileLayer
               url={MAP_LAYERS.flyfoto.url}
               attribution={MAP_LAYERS.flyfoto.attribution}
@@ -357,11 +319,19 @@ export default function HuntMap({
             />
           </LayersControl.BaseLayer>
 
-          <LayersControl.BaseLayer name={MAP_LAYERS.openTopo.name}>
+          <LayersControl.BaseLayer name="Satellitt">
             <TileLayer
-              url={MAP_LAYERS.openTopo.url}
-              attribution={MAP_LAYERS.openTopo.attribution}
-              maxZoom={MAP_LAYERS.openTopo.maxZoom}
+              url={MAP_LAYERS.mapboxSatellite.url}
+              attribution={MAP_LAYERS.mapboxSatellite.attribution}
+              maxZoom={MAP_LAYERS.mapboxSatellite.maxZoom}
+            />
+          </LayersControl.BaseLayer>
+
+          <LayersControl.BaseLayer name="Detaljert">
+            <TileLayer
+              url={MAP_LAYERS.n5raster.url}
+              attribution={MAP_LAYERS.n5raster.attribution}
+              maxZoom={MAP_LAYERS.n5raster.maxZoom}
             />
           </LayersControl.BaseLayer>
         </LayersControl>
@@ -377,16 +347,7 @@ export default function HuntMap({
           />
         )}
 
-        {/* Markslag WMS */}
-        {showLandUse && (
-          <WMSTileLayer
-            url={WMS_OVERLAYS.markslag.url}
-            layers={WMS_OVERLAYS.markslag.layers}
-            format="image/png"
-            transparent={true}
-            opacity={0.4}
-          />
-        )}
+
 
         {/* Tegn GPS-spor */}
         {tracks.map((track) => {
@@ -474,28 +435,17 @@ export default function HuntMap({
         <ScaleControl position="bottomleft" imperial={false} />
       </MapContainer>
 
-      {/* Kartlag-kontroller */}
+      {/* Eiendomsgrenser toggle */}
       <div className="absolute top-4 left-4 bg-background-light/90 backdrop-blur-sm p-2 rounded shadow z-[1000]">
-        <div className="space-y-1">
-          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showPropertyBoundaries}
-              onChange={(e) => setShowPropertyBoundaries(e.target.checked)}
-              className="w-3 h-3"
-            />
-            <span className="text-text-primary">Eiendom</span>
-          </label>
-          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showLandUse}
-              onChange={(e) => setShowLandUse(e.target.checked)}
-              className="w-3 h-3"
-            />
-            <span className="text-text-primary">Markslag</span>
-          </label>
-        </div>
+        <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showPropertyBoundaries}
+            onChange={(e) => setShowPropertyBoundaries(e.target.checked)}
+            className="w-3 h-3 accent-primary-500"
+          />
+          <span className="text-text-primary">Eiendomsgrenser</span>
+        </label>
       </div>
 
       {/* Map tools */}
