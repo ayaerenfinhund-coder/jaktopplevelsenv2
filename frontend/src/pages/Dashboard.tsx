@@ -451,7 +451,15 @@ export default function Dashboard() {
         time: format(new Date(), 'HH:mm'),
       })),
       dogs: [selectedDog],
-      tracks: matchedTrack ? [matchedTrack.id] : [],
+      // Store full track data with geojson for map display
+      tracks: matchedTrack ? [{
+        id: matchedTrack.id || `track-${Date.now()}`,
+        name: matchedTrack.name || 'GPS-spor',
+        geojson: matchedTrack.geojson,
+        statistics: matchedTrack.statistics,
+        color: matchedTrack.color || '#D4752E',
+        source: matchedTrack.source || 'gpx_import',
+      }] : [],
       photos: [],
       notes: quickNote || '',
       tags: [],
