@@ -108,9 +108,9 @@ function DistanceMeasurer({
       const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.cos((lat1 * Math.PI) / 180) *
-          Math.cos((lat2 * Math.PI) / 180) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       total += R * c;
     }
@@ -181,44 +181,52 @@ function generateHeatmapData(tracks: Track[]): { lat: number; lng: number; inten
   });
 }
 
-// Kartverket WMTS - samme som norgeskart.no bruker
+// Kartverket WMTS - Premium Norwegian hunting maps
 const MAP_LAYERS = {
-  // Mapbox Outdoors - beste for jakt og friluftsliv
-  mapboxOutdoors: {
-    name: 'Mapbox Outdoors',
-    url: `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/tiles/{z}/{x}/{y}?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`,
-    attribution: '© <a href="https://mapbox.com">Mapbox</a>',
-    maxZoom: 22,
+  // Kartverket Turkart - BEST for hunting/outdoor activities in Norway
+  // This is the same map used in professional outdoor apps
+  turkart: {
+    name: '🏔️ Turkart (Anbefalt)',
+    url: 'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png',
+    attribution: '© <a href="https://kartverket.no">Kartverket</a>',
+    maxZoom: 21,
   },
-  // Mapbox Satellite med gatenavn
-  mapboxSatellite: {
-    name: 'Mapbox Satellitt',
-    url: `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`,
-    attribution: '© <a href="https://mapbox.com">Mapbox</a>',
-    maxZoom: 22,
+  // N5 Raster - Highest detail available from Kartverket (1:5000 scale)
+  n5raster: {
+    name: '🔍 N5 Detalj (1:5000)',
+    url: 'https://cache.kartverket.no/v1/wmts/1.0.0/toporaster/default/webmercator/{z}/{y}/{x}.png',
+    attribution: '© <a href="https://kartverket.no">Kartverket</a>',
+    maxZoom: 20,
   },
-  // Norgeskart Topografisk - hovedkart fra Kartverket
+  // Norgeskart Topografisk - standard topo
   topo: {
     name: 'Norgeskart Topo',
     url: 'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png',
     attribution: '© <a href="https://kartverket.no">Kartverket</a>',
     maxZoom: 20,
   },
-  // Toporaster - detaljert rasterkart
-  toporaster: {
-    name: 'Topografisk Raster',
-    url: 'https://cache.kartverket.no/v1/wmts/1.0.0/toporaster/default/webmercator/{z}/{y}/{x}.png',
-    attribution: '© <a href="https://kartverket.no">Kartverket</a>',
-    maxZoom: 18,
+  // Norge i bilder - Official Norwegian orthophotos (best quality)
+  norgeibilder: {
+    name: '📸 Norge i Bilder',
+    url: 'https://waapi.webatlas.no/maptiles/tiles/webatlas-orto-newup/wa_grid/{z}/{x}/{y}.jpeg',
+    attribution: '© <a href="https://norgeibilder.no">Norge i bilder</a>',
+    maxZoom: 20,
   },
-  // Flyfoto - ESRI World Imagery (fungerer uten API-nøkkel)
+  // Mapbox Satellite with streets overlay
+  mapboxSatellite: {
+    name: 'Mapbox Satellitt',
+    url: `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`,
+    attribution: '© <a href="https://mapbox.com">Mapbox</a>',
+    maxZoom: 22,
+  },
+  // ESRI Flyfoto - High quality worldwide imagery
   flyfoto: {
-    name: 'Flyfoto',
+    name: 'Flyfoto (ESRI)',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: '© <a href="https://www.esri.com">Esri</a>, Maxar, Earthstar Geographics',
     maxZoom: 19,
   },
-  // OpenTopoMap som backup
+  // OpenTopoMap as fallback
   openTopo: {
     name: 'OpenTopoMap',
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
@@ -299,21 +307,21 @@ export default function HuntMap({
         zoomControl={showControls}
         attributionControl={true}
       >
-        {/* Kartverket WMTS - norgeskart.no sine kartlag */}
+        {/* Premium Norwegian Hunting Maps - Kartverket */}
         <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name={MAP_LAYERS.mapboxOutdoors.name}>
+          <LayersControl.BaseLayer checked name={MAP_LAYERS.turkart.name}>
             <TileLayer
-              url={MAP_LAYERS.mapboxOutdoors.url}
-              attribution={MAP_LAYERS.mapboxOutdoors.attribution}
-              maxZoom={MAP_LAYERS.mapboxOutdoors.maxZoom}
+              url={MAP_LAYERS.turkart.url}
+              attribution={MAP_LAYERS.turkart.attribution}
+              maxZoom={MAP_LAYERS.turkart.maxZoom}
             />
           </LayersControl.BaseLayer>
 
-          <LayersControl.BaseLayer name={MAP_LAYERS.mapboxSatellite.name}>
+          <LayersControl.BaseLayer name={MAP_LAYERS.n5raster.name}>
             <TileLayer
-              url={MAP_LAYERS.mapboxSatellite.url}
-              attribution={MAP_LAYERS.mapboxSatellite.attribution}
-              maxZoom={MAP_LAYERS.mapboxSatellite.maxZoom}
+              url={MAP_LAYERS.n5raster.url}
+              attribution={MAP_LAYERS.n5raster.attribution}
+              maxZoom={MAP_LAYERS.n5raster.maxZoom}
             />
           </LayersControl.BaseLayer>
 
@@ -325,11 +333,19 @@ export default function HuntMap({
             />
           </LayersControl.BaseLayer>
 
-          <LayersControl.BaseLayer name={MAP_LAYERS.toporaster.name}>
+          <LayersControl.BaseLayer name={MAP_LAYERS.norgeibilder.name}>
             <TileLayer
-              url={MAP_LAYERS.toporaster.url}
-              attribution={MAP_LAYERS.toporaster.attribution}
-              maxZoom={MAP_LAYERS.toporaster.maxZoom}
+              url={MAP_LAYERS.norgeibilder.url}
+              attribution={MAP_LAYERS.norgeibilder.attribution}
+              maxZoom={MAP_LAYERS.norgeibilder.maxZoom}
+            />
+          </LayersControl.BaseLayer>
+
+          <LayersControl.BaseLayer name={MAP_LAYERS.mapboxSatellite.name}>
+            <TileLayer
+              url={MAP_LAYERS.mapboxSatellite.url}
+              attribution={MAP_LAYERS.mapboxSatellite.attribution}
+              maxZoom={MAP_LAYERS.mapboxSatellite.maxZoom}
             />
           </LayersControl.BaseLayer>
 
@@ -491,22 +507,20 @@ export default function HuntMap({
               setMeasuredDistance(null);
             }
           }}
-          className={`p-2 rounded shadow transition-colors ${
-            isMeasuring
-              ? 'bg-accent-500 text-white'
-              : 'bg-background-light/90 backdrop-blur-sm text-text-muted hover:text-text-primary'
-          }`}
+          className={`p-2 rounded shadow transition-colors ${isMeasuring
+            ? 'bg-accent-500 text-white'
+            : 'bg-background-light/90 backdrop-blur-sm text-text-muted hover:text-text-primary'
+            }`}
           title="Mål avstand"
         >
           <Ruler className="w-4 h-4" />
         </button>
         <button
           onClick={() => setShowHeatmap(!showHeatmap)}
-          className={`p-2 rounded shadow transition-colors ${
-            showHeatmap
-              ? 'bg-accent-500 text-white'
-              : 'bg-background-light/90 backdrop-blur-sm text-text-muted hover:text-text-primary'
-          }`}
+          className={`p-2 rounded shadow transition-colors ${showHeatmap
+            ? 'bg-accent-500 text-white'
+            : 'bg-background-light/90 backdrop-blur-sm text-text-muted hover:text-text-primary'
+            }`}
           title="Vis heatmap"
         >
           <Flame className="w-4 h-4" />
